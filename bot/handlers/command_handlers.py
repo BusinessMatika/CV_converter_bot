@@ -2,15 +2,19 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 from telegram.helpers import escape_markdown
 
-from common.enums import Button, Callback
 from common.constants import HELP_MESSAGE, START_MESSAGE, STOP_MESSAGE
+from common.enums import Button, Callback
 from utils.bot_utils import send_message_or_edit_text
 
 
 async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user is None:
+        return
+
     keyboard = [
         [InlineKeyboardButton(
-            Button.EVIT_CV.value, callback_data=Callback.EDIT_CV.value
+            Button.EDIT_CV.value, callback_data=Callback.EDIT_CV.value
         )],
         [InlineKeyboardButton('2️⃣ NA', callback_data='option_2')],
         [InlineKeyboardButton('3️⃣ NA', callback_data='option_3')],
@@ -24,7 +28,7 @@ async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await send_message_or_edit_text(
         update,
-        START_MESSAGE.format(first_name=update.effective_user.first_name),
+        START_MESSAGE.format(first_name=user.first_name),
         markup=reply_markup
     )
 
