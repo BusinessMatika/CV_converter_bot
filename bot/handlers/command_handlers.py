@@ -34,7 +34,8 @@ async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def stop_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.clear()
+    if context.user_data is not None:
+        context.user_data.clear()
     await send_message_or_edit_text(update, STOP_MESSAGE)
 
 
@@ -47,8 +48,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     return_markup = InlineKeyboardMarkup(return_button)
 
-    await update.message.reply_text(
-        text=escape_markdown(help_text, version=2),
-        parse_mode='MarkdownV2',
-        reply_markup=return_markup
-    )
+    message = update.message
+    if message:
+        await message.reply_text(
+            text=escape_markdown(help_text, version=2),
+            parse_mode='MarkdownV2',
+            reply_markup=return_markup
+        )
