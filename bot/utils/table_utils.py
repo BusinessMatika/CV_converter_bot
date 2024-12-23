@@ -1,10 +1,9 @@
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.oxml import parse_xml
-from docx.oxml.ns import nsdecls
 
 from common.enums import JSONData, Style, Table
+
 from .font_utils import set_raleway, set_raleway_medium
-from .style_utils import set_marker_style
+from .style_utils import add_style_table, set_marker_style
 
 
 def create_skills_table(document, skills):
@@ -33,7 +32,7 @@ def create_skills_table(document, skills):
             else:
                 cell.text = ''
 
-    style_table(table, Table.TRANSCEND.value)
+    add_style_table(table, Table.TRANSCEND.value)
 
 
 def add_skill_to_cell(cell, skill):
@@ -44,24 +43,7 @@ def add_skill_to_cell(cell, skill):
     paragraph = cell.paragraphs[0]
     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     skill_run = paragraph.add_run(skill)
-    set_raleway(skill_run, font_size=9)
-
-
-def style_table(table, top_border):
-    """
-    Styles the table, making only the top border visible.
-    """
-    for i, row in enumerate(table.rows):
-        for cell in row.cells:
-            tc = cell._element.get_or_add_tcPr()
-            tc.append(parse_xml(r'''
-                <w:tcBorders {}>
-                    {border}
-                    <w:left w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
-                    <w:bottom w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
-                    <w:right w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
-                </w:tcBorders>
-            '''.format(nsdecls('w'), border=top_border)))
+    set_raleway(skill_run, font_size=Style.NINE.value)
 
 
 def create_experiences_table(document, experiences):
@@ -83,12 +65,12 @@ def create_experiences_table(document, experiences):
         role_data = left_paragraph.add_run(
             f'{experience.get(JSONData.ROLE.value, "")}\n'
         )
-        set_raleway_medium(role_data, font_size=9)
+        set_raleway_medium(role_data, font_size=Style.NINE.value)
 
         dates_data = left_paragraph.add_run(
             experience.get(JSONData.DATES.value)
         )
-        set_raleway(dates_data, font_size=9)
+        set_raleway(dates_data, font_size=Style.NINE.value)
 
         # Right cell: Project details
         right_paragraph = right_cell.paragraphs[0]
@@ -96,10 +78,10 @@ def create_experiences_table(document, experiences):
         # Add project title and description
         for title, data, new_line in JSONData.PROJECT.value:
             project_title = right_paragraph.add_run(title)
-            set_raleway_medium(project_title, font_size=9)
+            set_raleway_medium(project_title, font_size=Style.NINE.value)
 
             project_data = right_paragraph.add_run(experience.get(data, ''))
-            set_raleway(project_data, font_size=9)
+            set_raleway(project_data, font_size=Style.NINE.value)
 
             if new_line:
                 right_paragraph.add_run('\n')
@@ -109,22 +91,24 @@ def create_experiences_table(document, experiences):
         for title, data in JSONData.TASKS_ACHIEVEMENTS.value:
             section_paragraph = right_cell.add_paragraph()
             section_title = section_paragraph.add_run(title)
-            set_raleway_medium(section_title, font_size=9)
+            set_raleway_medium(section_title, font_size=Style.NINE.value)
 
             for d in experience.get(data, []):
                 bullet = right_cell.add_paragraph(style=Style.BULLET.value)
-                set_marker_style(bullet, Style.HEX_GREY.value, 9)
+                set_marker_style(
+                    bullet, Style.HEX_GREY.value, Style.NINE.value
+                )
                 bullet_data = bullet.add_run(d)
-                set_raleway(bullet_data, font_size=9)
+                set_raleway(bullet_data, font_size=Style.NINE.value)
 
         # Add team and stack
         for title, data in JSONData.TEAM_STACK.value:
             section_paragraph = right_cell.add_paragraph()
             section_title = section_paragraph.add_run(title)
-            set_raleway_medium(section_title, font_size=9)
+            set_raleway_medium(section_title, font_size=Style.NINE.value)
 
             section_data = section_paragraph.add_run(experience.get(data, ''))
-            set_raleway(section_data, font_size=9)
+            set_raleway(section_data, font_size=Style.NINE.value)
 
     # Set table border styles (only top border visible)
-    style_table(table, Table.TOP.value)
+    add_style_table(table, Table.TOP.value)

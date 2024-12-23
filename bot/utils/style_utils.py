@@ -1,11 +1,16 @@
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
+from typing import Union
+
+from docx.document import Document
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import nsdecls, qn
 from docx.shared import Cm, RGBColor
+from docx.text.paragraph import Paragraph
 
 
 def add_images_to_header_footer(
-        document, header_image_path, footer_image_path
-):
+        document: Document, header_image_path: str,
+        footer_image_path: str
+) -> None:
     """
     Add header and footer images to the document.
     """
@@ -33,12 +38,14 @@ def add_images_to_header_footer(
     )
 
 
-def set_marker_style(paragraph, color, font_size):
+def set_marker_style(
+        paragraph: Paragraph, color: Union[RGBColor, str], font_size: int
+) -> None:
     """
     Set the style for a paragraph marker with specified color and font size.
     """
     if isinstance(color, RGBColor):
-        color = f"{color.red:02X}{color.green:02X}{color.blue:02X}"
+        color = str(color)
 
     font_size_twips = str(int(font_size * 2))
 
@@ -56,3 +63,20 @@ def set_marker_style(paragraph, color, font_size):
     size_element = rPr.find(qn('w:sz')) or OxmlElement('w:sz')
     rPr.append(size_element)
     size_element.set(qn('w:val'), font_size_twips)
+
+
+def add_style_table(table, top_border):
+    """
+    Add style to table, making only the top border visible.
+    """
+    for i, row in enumerate(table.rows):
+        for cell in row.cells:
+            tc = cell._element.get_or_add_tcPr()
+            tc.append(parse_xml(r'''
+                <w:tcBorders {}>
+                    {border}
+                    <w:left w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
+                    <w:bottom w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
+                    <w:right w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
+                </w:tcBorders>
+            '''.format(nsdecls('w'), border=top_border)))
