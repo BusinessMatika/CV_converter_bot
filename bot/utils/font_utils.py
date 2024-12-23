@@ -1,15 +1,15 @@
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
+from docx.text.run import Run
 
-from common.enums import Style  # изменить импорт
+from common.enums import Style
 
 
-def check_fonts():
+def check_fonts() -> None:
     """
     Check whether user has all the required fonts installed.
     """
-
     from tkinter import Tk, font
     root = Tk()
     available_fonts = font.families()
@@ -28,7 +28,7 @@ def check_fonts():
         )
 
 
-def set_font(run, font_name, font_size):
+def set_font(run: Run, font_name: str, font_size: int) -> None:
     """
     Apply the specified font and size to a run.
     """
@@ -52,27 +52,28 @@ def set_font(run, font_name, font_size):
     [rFonts.set(qn(f'w:{attr}'), font_name) for attr in font_attrs]
 
 
-def apply_font_style(run, font_size, font_name, color):
+def apply_font_style(
+        run: Run, font_size: int,
+        font_name: str, color: RGBColor
+) -> None:
     """
     Apply font style with the specified size and color to a run.
     """
-
     check_fonts()
     run.font.color.rgb = color
     set_font(run, font_name, font_size)
 
 
-def set_raleway(run, font_size):
+def set_raleway(run: Run, font_size: int) -> None:
     """
     Apply Raleway font to a run with a specified size and grey color.
     """
-
     apply_font_style(
         run, font_size, Style.RALEWAY.value, Style.GREY.value
     )
 
 
-def set_raleway_medium(run, font_size):
+def set_raleway_medium(run: Run, font_size: int) -> None:
     """
     Apply Raleway Medium font to a run with a specified size and black color.
     """
