@@ -6,6 +6,8 @@ from docx.oxml.ns import nsdecls, qn
 from docx.shared import Cm, RGBColor
 from docx.text.paragraph import Paragraph
 
+from common.enums import Number, Style
+
 
 def add_images_to_header_footer(
         document: Document, header_image_path: str,
@@ -15,26 +17,34 @@ def add_images_to_header_footer(
     Add header and footer images to the document.
     """
 
-    section = document.sections[0]
+    section = document.sections[Number.ZERO.value]
 
     # Add header
     header = section.header
     header_paragraph = (
-        header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+        header.paragraphs[
+            Number.ZERO.value
+        ] if header.paragraphs else header.add_paragraph()
     )
     header_paragraph.clear()
     header_paragraph.add_run().add_picture(
-        header_image_path, width=Cm(4.76), height=Cm(0.92)
+        header_image_path,
+        width=Cm(Style.HEADER_WD.value),
+        height=Cm(Style.HEADER_H.value)
     )
 
     # Add footer
     footer = section.footer
     footer_paragraph = (
-        footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        footer.paragraphs[
+            Number.ZERO.value
+        ] if footer.paragraphs else footer.add_paragraph()
     )
     footer_paragraph.clear()
     footer_paragraph.add_run().add_picture(
-        footer_image_path, width=Cm(3.56), height=Cm(1.09)
+        footer_image_path,
+        width=Cm(Style.FOOTER_WD.value),
+        height=Cm(Style.FOOTER_H.value)
     )
 
 
@@ -47,7 +57,7 @@ def set_marker_style(
     if isinstance(color, RGBColor):
         color = str(color)
 
-    font_size_twips = str(int(font_size * 2))
+    font_size_twips = str(int(font_size * Number.TWO.value))
 
     pPr = paragraph._element.get_or_add_pPr()
     numPr = pPr.find(qn('w:numPr')) or OxmlElement('w:numPr')

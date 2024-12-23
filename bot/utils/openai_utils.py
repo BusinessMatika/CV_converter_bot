@@ -1,41 +1,50 @@
+import io
+import json
+
 import openai
 from docx import Document
 
 from common.enums import OpenAI
-from config import EDITED_CV, REFERENCE_CV
+
+from .docx_utils import generate_docx_from_json
 
 
 async def analyze_and_edit(
         user_file_path: str,
-        reference_file_path: str = REFERENCE_CV
-) -> str:
-
+) -> io.BytesIO:
+    """Analyzes and edits user's document."""
     # Load user's file
     user_doc = Document(user_file_path)
-    user_content = '\n'.join([p.text for p in user_doc.paragraphs])
+    user_content = '\n'.join(
+        [p.text for p in user_doc.paragraphs if p.text.strip()]
+    ).strip()
 
-    # Load reference file
-    reference_doc = Document(REFERENCE_CV)
-    reference_content = '\n'.join([p.text for p in reference_doc.paragraphs])
-
+    # Get response from OpenAI
     response = openai.chat.completions.create(
         model=OpenAI.MODEL.value,
         messages=OpenAI.get_messages(
             user_content=user_content,
-            reference_content=reference_content
+            json_str=OpenAI.JSON.value,
         )
     )
 
     gpt_response = response.choices[0].message.content
 
-    # Check if edits are needed (CHECK WHETHER THIS CONDITION IS NEEDED!)
-    if 'The document is compatible' in gpt_response:
-        return None
+    # Parse JSON response
+    try:
+        gpt_json = json.loads(gpt_response)
+    except json.JSONDecodeError as e:
+        print("Ошибка в JSON:", e)
+        return "Ошибка в формате ответа от OpenAI"
 
-    edited_file_path = EDITED_CV
-    edited_doc = Document()
-    for line in gpt_response.split('\n'):
-        edited_doc.add_paragraph(line)
-    edited_doc.save(edited_file_path)
+    # Validate required sections
+    for section in OpenAI.JSON.value["sections"]:
+        if not gpt_json["sections"].get(section, {}).get("title"):
+            print(f"Ошибка: секция {section} не заполнена корректно.")
+            return f"Ошибка: секция {section} не заполнена корректно."
 
-    return edited_file_path
+    # Generate DOCX from JSON
+    output_stream = io.BytesIO()
+    generate_docx_from_json(gpt_json, output_stream)
+    output_stream.seek(0)
+    return output_stream
