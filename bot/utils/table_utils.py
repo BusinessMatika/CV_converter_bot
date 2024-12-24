@@ -2,9 +2,9 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 from common.enums import JSONData, Number, Style, Table
 
+from .common_utils import add_bullet_list, add_text
 from .font_utils import set_raleway, set_raleway_medium
 from .style_utils import add_style_table
-from .common_utils import add_bullet_list, add_text
 
 
 def add_experience_left_cell(cell, experience):

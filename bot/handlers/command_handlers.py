@@ -55,3 +55,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode='MarkdownV2',
             reply_markup=return_markup
         )
+
+
+async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Эта команда отсутствует."
+    )

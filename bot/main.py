@@ -8,7 +8,8 @@ from common.constants import LOG_FORMAT
 from common.enums import Handler
 from config import TELEGRAM_TOKEN
 from handlers.callback_handlers import handle_callback
-from handlers.command_handlers import help_command, start_bot, stop_bot
+from handlers.command_handlers import (help_command, start_bot, stop_bot,
+                                       unknown)
 from handlers.file_handlers import handle_file
 
 logging.basicConfig(
@@ -26,6 +27,7 @@ def main():
         CommandHandler(Handler.STOP.value, stop_bot),
         MessageHandler(filters.Document.DOCX, handle_file),
         CallbackQueryHandler(handle_callback),
+        MessageHandler(filters.COMMAND, unknown)
     ]
 
     for handler in handlers:
