@@ -3,29 +3,7 @@ from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor
 from docx.text.run import Run
 
-from common.enums import Style
-
-
-def check_fonts() -> None:
-    """
-    Check whether user has all the required fonts installed.
-    """
-    from tkinter import Tk, font
-    root = Tk()
-    available_fonts = font.families()
-    root.destroy()
-    missing_fonts = [
-        f'"{font}"' for font in Style.AVAILABLE_FONTS.value
-        if font not in available_fonts
-    ]
-
-    if missing_fonts:
-        raise RuntimeError(
-            f'Missing fonts: {", ".join(missing_fonts)} \n'
-            'Please download Raleway fonts from '
-            'https://fonts.google.com/specimen/Raleway '
-            f'and install required .tff files from /static folder: '
-        )
+from app.common.enums import Style
 
 
 def set_font(run: Run, font_name: str, font_size: int) -> None:
@@ -59,7 +37,6 @@ def apply_font_style(
     """
     Apply font style with the specified size and color to a run.
     """
-    check_fonts()
     run.font.color.rgb = color
     set_font(run, font_name, font_size)
 

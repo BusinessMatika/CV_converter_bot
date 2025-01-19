@@ -1,4 +1,4 @@
-from common.enums import Style
+from app.common.enums import Style
 
 from .style_utils import set_marker_style
 

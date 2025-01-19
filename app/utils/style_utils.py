@@ -6,7 +6,7 @@ from docx.oxml.ns import nsdecls, qn
 from docx.shared import Cm, RGBColor
 from docx.text.paragraph import Paragraph
 
-from common.enums import Number, Style
+from app.common.enums import Number, Style
 
 
 def add_images_to_header_footer(

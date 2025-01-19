@@ -1,14 +1,13 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from common.enums import Button, Callback, Reply
-from handlers.command_handlers import start_bot, stop_bot
+from app.common.enums import Button, Callback, Reply
+from app.config import logger
+from app.handlers.command_handlers import start_bot, stop_bot
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    if query is None:
-        return
 
     await query.answer()
 
@@ -34,8 +33,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     handler = handlers.get(query.data)
     if handler:
+        logger.info(f"Executing handler for {query.data}")
         await handler()
     else:
+        logger.warning(f"No handler found for {query.data}")
         await query.edit_message_text(
             Reply.NOT_EXIST.value.format(query=query.data),
             reply_markup=return_markup

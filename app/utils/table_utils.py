@@ -1,6 +1,6 @@
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
-from common.enums import JSONData, Number, Style, Table
+from app.common.enums import JSONData, Number, Style, Table
 
 from .common_utils import add_bullet_list, add_text
 from .font_utils import set_raleway, set_raleway_medium

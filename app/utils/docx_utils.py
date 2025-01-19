@@ -1,8 +1,8 @@
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
-from common.enums import JSONData, Style
-from config import FOOTER_PATH, HEADER_PATH
+from app.common.enums import JSONData, Style
+from app.config import FOOTER_PATH, HEADER_PATH
 
 from .common_utils import add_bullet_list, add_section, add_text
 from .font_utils import set_raleway, set_raleway_medium
