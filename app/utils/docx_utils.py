@@ -2,7 +2,8 @@ from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 from app.common.enums import JSONData, Style
-from app.config import FOOTER_PATH, HEADER_PATH
+from app.config import (BM_FOOTER_PATH, BM_HEADER_PATH, HUNTERCORE_HEADER_PATH,
+                        TELESCOPE_HEADER_PATH)
 
 from .common_utils import add_bullet_list, add_section, add_text
 from .font_utils import set_raleway, set_raleway_medium
@@ -10,9 +11,24 @@ from .style_utils import add_images_to_header_footer
 from .table_utils import create_experiences_table, create_skills_table
 
 
-def generate_docx_from_json(data, output_stream):
+def generate_docx_from_json(data, output_stream, format_choice):
     document = Document()
-    add_images_to_header_footer(document, HEADER_PATH, FOOTER_PATH)
+    if format_choice == 'businessmatica':
+        add_images_to_header_footer(
+            document,
+            BM_HEADER_PATH, Style.BM_HEADER_WD.value, Style.BM_HEADER_H.value,
+            BM_FOOTER_PATH, Style.BM_FOOTER_WD.value, Style.BM_FOOTER_H.value
+        )
+    elif format_choice == 'huntercore':
+        add_images_to_header_footer(
+            document, HUNTERCORE_HEADER_PATH, Style.HUNT_HEADER_WD.value,
+            Style.HUNT_HEADER_H.value
+        )
+    elif format_choice == 'telescope':
+        add_images_to_header_footer(
+            document, TELESCOPE_HEADER_PATH, Style.TEL_HEADER_WD.value,
+            Style.TEL_HEADER_H.value
+        )
 
     header = data[JSONData.HEADER.value]
     sections = data[JSONData.SECTIONS.value]

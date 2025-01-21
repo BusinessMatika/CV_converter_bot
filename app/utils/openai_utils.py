@@ -12,7 +12,7 @@ from .docx_utils import generate_docx_from_json
 openai.api_key = OPENAI_API_KEY
 
 
-async def analyze_and_edit(user_text: str) -> io.BytesIO:
+async def analyze_and_edit(user_text: str, format_choice: str) -> io.BytesIO:
     """Analyzes and edits raw text content."""
     if '.docx' in user_text:
         user_doc = Document(user_text)
@@ -45,6 +45,6 @@ async def analyze_and_edit(user_text: str) -> io.BytesIO:
 
     # Generate DOCX from JSON
     output_stream = io.BytesIO()
-    generate_docx_from_json(gpt_json, output_stream)
+    generate_docx_from_json(gpt_json, output_stream, format_choice)
     output_stream.seek(0)
     return output_stream

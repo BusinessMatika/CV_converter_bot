@@ -31,7 +31,7 @@ async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_message_or_edit_text(
         update,
         START_MESSAGE.format(first_name=user.first_name),
-        markup=reply_markup
+        reply_markup=reply_markup
     )
     logger.info("Start bot message sent.")
     logger.info(f'DEBUG = {DEBUG}')
@@ -58,8 +58,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if message:
         await message.reply_text(
-            text=escape_markdown(help_text, version=2),
-            parse_mode='MarkdownV2',
+            text=help_text,
+            parse_mode='HTML',
             reply_markup=return_markup
         )
         logger.info("Help message sent.")

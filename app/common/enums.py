@@ -6,14 +6,26 @@ from docx.shared import RGBColor
 
 class Button(Enum):
     BACK = '⬅️ Назад'
+    BUSINESSMARIKA = 'Businessmatica'
     EDIT_CV = '1️⃣ Отредактировать CV'
+    HUNTERCORE = 'Huntercore'
     STOP = '❌ Остановить работу'
+    TELESCOPE = 'Telescope'
 
 
 class Callback(Enum):
+    BUSINESSMATIKA = 'businessmatica'
     EDIT_CV = 'edit_cv'
+    HUNTERCORE = 'huntercore'
     RETURN_TO_START = 'return_to_start'
     STOP_BOT = 'stop_bot'
+    TELESCOPE = 'telescope'
+
+
+class CVTemplate(Enum):
+    BUSINESSMATIKA = 'businessmatica'
+    HUNTERCORE = 'huntercore'
+    TELESCOPE = 'telescope'
 
 
 class Handler(Enum):
@@ -84,10 +96,14 @@ class Style(Enum):
     RALEWAY_MEDIUM = 'Raleway Medium'
     AVAILABLE_FONTS = (RALEWAY, RALEWAY_LIGHT, RALEWAY_MEDIUM)
     # Size
-    FOOTER_H = 1.09
-    FOOTER_WD = 3.56
-    HEADER_H = 0.92
-    HEADER_WD = 4.76
+    BM_FOOTER_H = 1.09
+    BM_FOOTER_WD = 3.56
+    BM_HEADER_H = 0.92
+    BM_HEADER_WD = 4.76
+    HUNT_HEADER_H = 1.28
+    HUNT_HEADER_WD = 6.56
+    TEL_HEADER_H = 0.97
+    TEL_HEADER_WD = 4.52
     NINE = 9
     TEN = 10
     TWENTY = 20
@@ -189,11 +205,15 @@ class OpenAI(Enum):
 class Reply(Enum):
     COMPATIBLE = 'Ваш файл уже совместим с референсом.'
     EDIT_CV = (
-        'Вы выбрали: Отредактировать CV. '
+        'Вы выбрали: <b>"Отредактировать CV"</b>.\n\n'
+        'Теперь выберете необходимый шаблон для CV.'
+    )
+    NOT_EXIST = 'Опция <b>"{query}"</b> пока недоступна.'
+    SUCCESS = 'Вот ваш обновлённый файл с CV!'
+    TEMPLATE_CHOICE = (
+        'Вы выбрали шаблон <b>"{template}"</b>.\n\n'
         'Загрузите CV в формате .docx или .pdf, чтобы отредактировать его.\n\n'
         'Если полученный результат будет неудовлетворительным (такое случается, увы), '
         'отправьте файл заново.'
     )
-    NOT_EXIST = 'Опция \"{query}\" пока недоступна.'
-    SUCCESS = 'Вот ваш обновлённый файл с CV!'
     WRONG_EXT = 'Вы отправили файл не с тем расширением. Прошу отправить .docx или .pdf'

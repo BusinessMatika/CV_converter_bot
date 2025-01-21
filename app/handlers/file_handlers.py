@@ -19,6 +19,8 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_file_name = document.file_name
     logger.info(f"Received file: {user_file_name}")
 
+    template_choice = context.user_data.get('cv_format')
+
     if DEBUG:
         # Save the received file
         file_path = f'{user_file_name}'
@@ -31,15 +33,18 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f"File downloaded to {file_path}")
 
     # edited_file_stream = None
+    if not template_choice:
+        await update.message.reply_text("Выберите формат перед отправкой файла.")
+        return
 
     if document.mime_type == DOCX_MIME_TYPE:
-        edited_file_stream = await analyze_and_edit(file_path)
+        edited_file_stream = await analyze_and_edit(file_path, template_choice)
         new_file_name = f"edited_{user_file_name}"
         logger.info(f"DOCX file edited: {new_file_name}")
     elif document.mime_type == PDF_MIME_TYPE:
         pdf_text = extract_text_from_pdf(file_path)
         if pdf_text:
-            edited_file_stream = await analyze_and_edit(pdf_text)
+            edited_file_stream = await analyze_and_edit(pdf_text, template_choice)
             new_file_name = f"edited_{user_file_name.rsplit('.', 1)[0]}.docx"
             logger.info(f"PDF file edited: {new_file_name}")
     else:

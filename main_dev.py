@@ -13,7 +13,6 @@ from app.handlers.file_handlers import handle_file
 
 # Initialize the FastAPI app
 fastapi_app = FastAPI()
-cd 
 
 async def main():
     # Initialize the Telegram bot application (initialize it correctly)
@@ -34,7 +33,7 @@ async def main():
         telegram_app.add_handler(handler)
 
     await telegram_app.bot.set_webhook(
-        url='https://5109-82-215-113-60.ngrok-free.app/webhook',
+        url='https://2858-82-215-113-60.ngrok-free.app/webhook',  # Replace with ngrok url
         allowed_updates=Update.ALL_TYPES
     )
 
