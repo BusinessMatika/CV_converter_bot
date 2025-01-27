@@ -2,14 +2,16 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 from telegram.helpers import escape_markdown
 
-from common.constants import HELP_MESSAGE, START_MESSAGE, STOP_MESSAGE
-from common.enums import Button, Callback
-from utils.bot_utils import send_message_or_edit_text
+from app.common.constants import HELP_MESSAGE, START_MESSAGE, STOP_MESSAGE
+from app.common.enums import Button, Callback
+from app.config import DEBUG, logger
+from app.utils.bot_utils import send_message_or_edit_text
 
 
 async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user is None:
+        logger.warning("User is None in start_bot.")
         return
 
     keyboard = [
@@ -27,19 +29,24 @@ async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await send_message_or_edit_text(
-        update,
+        update, context,
         START_MESSAGE.format(first_name=user.first_name),
-        markup=reply_markup
+        reply_markup=reply_markup
     )
+    logger.info("Start bot message sent.")
+    logger.info(f'DEBUG = {DEBUG}')
 
 
 async def stop_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info("Stop command received.")
     if context.user_data is not None:
         context.user_data.clear()
-    await send_message_or_edit_text(update, STOP_MESSAGE)
+    await send_message_or_edit_text(update, context, STOP_MESSAGE)
+    logger.info("Stop bot message sent.")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info("Help command received.")
     help_text = HELP_MESSAGE
     return_button = [
         [InlineKeyboardButton(
@@ -51,7 +58,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if message:
         await message.reply_text(
-            text=escape_markdown(help_text, version=2),
-            parse_mode='MarkdownV2',
+            text=help_text,
+            parse_mode='HTML',
             reply_markup=return_markup
         )
+        logger.info("Help message sent.")
+    else:
+        logger.warning("Help message not sent - message is None.")
+
+
+async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Эта команда отсутствует."
+    )
+    logger.info("Unknown command response sent.")
