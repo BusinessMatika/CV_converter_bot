@@ -6,7 +6,7 @@ from docx.shared import RGBColor
 
 class Button(Enum):
     BACK = '⬅️ Назад'
-    BUSINESSMARIKA = 'Businessmatica'
+    BUSINESSMARIKA = 'Businessmatika'
     EDIT_CV = '1️⃣ Отредактировать CV'
     HUNTERCORE = 'Huntercore'
     STOP = '❌ Остановить работу'
@@ -14,7 +14,7 @@ class Button(Enum):
 
 
 class Callback(Enum):
-    BUSINESSMATIKA = 'businessmatica'
+    BUSINESSMATIKA = 'businessmatika'
     EDIT_CV = 'edit_cv'
     HUNTERCORE = 'huntercore'
     RETURN_TO_START = 'return_to_start'
@@ -23,7 +23,7 @@ class Callback(Enum):
 
 
 class CVTemplate(Enum):
-    BUSINESSMATIKA = 'businessmatica'
+    BUSINESSMATIKA = 'businessmatika'
     HUNTERCORE = 'huntercore'
     TELESCOPE = 'telescope'
 

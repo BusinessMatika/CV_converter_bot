@@ -1,9 +1,9 @@
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
-from app.common.enums import JSONData, Style
+from app.common.enums import CVTemplate, JSONData, Style
 from app.config import (BM_FOOTER_PATH, BM_HEADER_PATH, HUNTERCORE_HEADER_PATH,
-                        TELESCOPE_HEADER_PATH)
+                        TELESCOPE_HEADER_PATH, logger)
 
 from .common_utils import add_bullet_list, add_section, add_text
 from .font_utils import set_raleway, set_raleway_medium
@@ -11,23 +11,36 @@ from .style_utils import add_images_to_header_footer
 from .table_utils import create_experiences_table, create_skills_table
 
 
-def generate_docx_from_json(data, output_stream, format_choice):
+def generate_docx_from_json(data, output_stream, template_choice):
     document = Document()
-    if format_choice == 'businessmatica':
+    template_choice = template_choice.strip().lower()
+    if not template_choice:
+        logger.error("template_choice is None or empty in generate_docx_from_json!")
+
+    if template_choice == CVTemplate.BUSINESSMATIKA.value:
         add_images_to_header_footer(
             document,
             BM_HEADER_PATH, Style.BM_HEADER_WD.value, Style.BM_HEADER_H.value,
             BM_FOOTER_PATH, Style.BM_FOOTER_WD.value, Style.BM_FOOTER_H.value
         )
-    elif format_choice == 'huntercore':
+    elif template_choice == CVTemplate.HUNTERCORE.value:
         add_images_to_header_footer(
             document, HUNTERCORE_HEADER_PATH, Style.HUNT_HEADER_WD.value,
             Style.HUNT_HEADER_H.value
         )
-    elif format_choice == 'telescope':
+    elif template_choice == CVTemplate.TELESCOPE.value:
         add_images_to_header_footer(
             document, TELESCOPE_HEADER_PATH, Style.TEL_HEADER_WD.value,
             Style.TEL_HEADER_H.value
+        )
+    else:
+        logger.error(
+            "Invalid template choice in generate_docx_from_json: {template_choice}"
+        )
+        add_images_to_header_footer(
+            document,
+            BM_HEADER_PATH, Style.BM_HEADER_WD.value, Style.BM_HEADER_H.value,
+            BM_FOOTER_PATH, Style.BM_FOOTER_WD.value, Style.BM_FOOTER_H.value
         )
 
     header = data[JSONData.HEADER.value]

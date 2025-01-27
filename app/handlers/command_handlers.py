@@ -29,7 +29,7 @@ async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await send_message_or_edit_text(
-        update,
+        update, context,
         START_MESSAGE.format(first_name=user.first_name),
         reply_markup=reply_markup
     )
@@ -41,7 +41,7 @@ async def stop_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("Stop command received.")
     if context.user_data is not None:
         context.user_data.clear()
-    await send_message_or_edit_text(update, STOP_MESSAGE)
+    await send_message_or_edit_text(update, context, STOP_MESSAGE)
     logger.info("Stop bot message sent.")
 
 

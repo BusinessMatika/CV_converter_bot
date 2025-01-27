@@ -5,7 +5,7 @@ from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
                           MessageHandler, filters)
 
 from app.common.enums import Handler
-from app.config import TELEGRAM_TOKEN
+from app.config import TELEGRAM_TOKEN, logger
 from app.handlers.callback_handlers import handle_callback
 from app.handlers.command_handlers import (help_command, start_bot, stop_bot,
                                            unknown)
@@ -14,8 +14,12 @@ from app.handlers.file_handlers import handle_file
 # Initialize the FastAPI app
 fastapi_app = FastAPI()
 
+
 async def main():
-    # Initialize the Telegram bot application (initialize it correctly)
+    if not TELEGRAM_TOKEN:
+        logger.error('TELEGRAM_TOKEN is not set.')
+        raise ValueError("TELEGRAM_TOKEN is not set.")
+    # Initialize the Telegram bot application
     telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
 
     # Define the handlers
@@ -33,7 +37,7 @@ async def main():
         telegram_app.add_handler(handler)
 
     await telegram_app.bot.set_webhook(
-        url='https://2858-82-215-113-60.ngrok-free.app/webhook',  # Replace with ngrok url
+        url='https://f2cc-82-215-113-60.ngrok-free.app/webhook',  # Replace with ngrok url
         allowed_updates=Update.ALL_TYPES
     )
 
@@ -46,7 +50,7 @@ async def main():
         # Process the update using the Telegram application
         await telegram_app.update_queue.put(update)
         return {"status": "ok"}
-    
+
     webserver = uvicorn.Server(
         config=uvicorn.Config(
             app=fastapi_app,

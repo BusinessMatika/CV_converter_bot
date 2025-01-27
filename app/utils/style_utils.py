@@ -11,13 +11,12 @@ from app.common.enums import Number
 
 def add_images_to_header_footer(
         document: Document, header_image_path: str, header_width: float,
-        header_height: float, footer_image_path: str = None,
-        footer_width: float = None, footer_height: float = None
+        header_height: float, footer_image_path=None,
+        footer_width=None, footer_height=None
 ) -> None:
     """
     Add header and footer images to the document.
     """
-
     section = document.sections[Number.ZERO.value]
 
     # Add header

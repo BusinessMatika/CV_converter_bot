@@ -6,36 +6,34 @@ from telegram.ext import ContextTypes
 from app.common.constants import DOCX_MIME_TYPE, PDF_MIME_TYPE
 from app.common.enums import Reply
 from app.config import DEBUG, logger
+from app.utils.bot_utils import get_user_template_choice
 from app.utils.openai_utils import analyze_and_edit
 from app.utils.pdf_utils import extract_text_from_pdf
 
 
-async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE, template=None):
     """
     Handles the file received from the user, processes it,
     and sends back the edited document.
     """
+    user_id = str(update.message.from_user.id)
     document = update.message.document
     user_file_name = document.file_name
     logger.info(f"Received file: {user_file_name}")
-
-    template_choice = context.user_data.get('cv_format')
-
     if DEBUG:
-        # Save the received file
+        template_choice = context.user_data.get('cv_template')
+        logger.info(
+            f'CV will be edited in accordance with template: {template_choice}')
         file_path = f'{user_file_name}'
     else:
-        # Save file to temp directory in AWS
+        template_choice = get_user_template_choice(user_id)
+        logger.info(
+            f'CV will be edited in accordance with template: {template_choice}')
         file_path = os.path.join('/tmp', user_file_name)
 
     file = await context.bot.get_file(document.file_id)
     await file.download_to_drive(file_path)
-    logger.info(f"File downloaded to {file_path}")
-
-    # edited_file_stream = None
-    if not template_choice:
-        await update.message.reply_text("Выберите формат перед отправкой файла.")
-        return
+    logger.info(f'CV saved to {file_path}')
 
     if document.mime_type == DOCX_MIME_TYPE:
         edited_file_stream = await analyze_and_edit(file_path, template_choice)
