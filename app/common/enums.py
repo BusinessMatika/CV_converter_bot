@@ -7,19 +7,25 @@ from docx.shared import RGBColor
 class Button(Enum):
     BACK = '⬅️ Назад'
     BUSINESSMARIKA = 'Businessmatika'
+    CV_EVALUATION = '2️⃣ Оценить CV для вакансии (НАХОДИТСЯ В РАЗРАБОТКЕ!)'
     EDIT_CV = '1️⃣ Отредактировать CV'
+    FILE = 'Файл'
     HUNTERCORE = 'Huntercore'
     STOP = '❌ Остановить работу'
     TELESCOPE = 'Telescope'
+    TEXT = 'Текст'
 
 
 class Callback(Enum):
     BUSINESSMATIKA = 'businessmatika'
+    CV_EVALUATION = 'cv_evaluation'
     EDIT_CV = 'edit_cv'
+    FILE = 'file'
     HUNTERCORE = 'huntercore'
     RETURN_TO_START = 'return_to_start'
     STOP_BOT = 'stop_bot'
     TELESCOPE = 'telescope'
+    TEXT = 'text'
 
 
 class CVTemplate(Enum):
@@ -204,6 +210,11 @@ class OpenAI(Enum):
 
 class Reply(Enum):
     COMPATIBLE = 'Ваш файл уже совместим с референсом.'
+    CV_EVALUATION = (
+        'Вы выбрали: <b>"Оценить CV для вакансии"</b>.\n\n'
+        'Выберите вариант отправки описания вакансии: '
+        'текстом или файлом в форматах .docx или .pdf'
+    )
     EDIT_CV = (
         'Вы выбрали: <b>"Отредактировать CV"</b>.\n\n'
         'Теперь выберете необходимый шаблон для CV.'
@@ -215,5 +226,13 @@ class Reply(Enum):
         'Загрузите CV в формате .docx или .pdf, чтобы отредактировать его.\n\n'
         'Если полученный результат будет неудовлетворительным (такое случается, увы), '
         'отправьте файл заново.'
+    )
+    VACANCY_FILE = (
+        'Вы выбрали <b>"Текст"</b>. '
+        'Отправьте в чат текст с описанием вакансии. '
+    )
+    VACANCY_TEXT = (
+        'Вы выбрали <b>"Файл"</b>.\n\n'
+        'Загрузите описание вакансии в формате .docx или .pdf. '
     )
     WRONG_EXT = 'Вы отправили файл не с тем расширением. Прошу отправить .docx или .pdf'
