@@ -1,9 +1,6 @@
 from typing import Optional, Union
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update
-from telegram.ext import (
-    Updater, CallbackQueryHandler, CommandHandler, MessageHandler, filters, CallbackContext
-)
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.common.enums import Button, Callback
 
@@ -12,14 +9,8 @@ def return_back(
     return_step: Optional[str] = None,
     as_markup: bool = True
 ) -> Union[list[InlineKeyboardButton], InlineKeyboardMarkup]:
-    """
-    Универсальная функция для возврата кнопки или готовой разметки.
-
-    :param return_step: Callback шаг для кнопки "Назад".
-    :param as_markup: Если True, возвращает InlineKeyboardMarkup, иначе список кнопок.
-    :return: InlineKeyboardMarkup или список InlineKeyboardButton.
-    """
-    # Шаг по умолчанию для "Назад"
+    
+    
     if return_step is None:
         return_step = Callback.RETURN_TO_START.value
 
@@ -88,5 +79,3 @@ def evaluate_cv_markup(return_step: Optional[Callback] = None):
     if return_step:
         keyboard.extend(return_back(return_step, False))
     return InlineKeyboardMarkup(keyboard)
-
-

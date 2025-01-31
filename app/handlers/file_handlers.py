@@ -6,7 +6,8 @@ from telegram.ext import ContextTypes
 from app.common.constants import DOCX_MIME_TYPE, PDF_MIME_TYPE
 from app.common.enums import Reply
 from app.config import DEBUG, logger
-from app.utils.bot_utils import get_user_template_choice
+from app.utils.bot_utils import (get_user_template_choice,
+                                 send_message_or_edit_text)
 from app.utils.openai_utils import analyze_and_edit
 from app.utils.pdf_utils import extract_text_from_pdf
 
@@ -34,6 +35,15 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE, templa
     file = await context.bot.get_file(document.file_id)
     await file.download_to_drive(file_path)
     logger.info(f'CV saved to {file_path}')
+
+    if template_choice:
+        await send_message_or_edit_text(
+            update,
+            context,
+            Reply.EDIT_CV_EXECUTION.value.format(
+                file_name=user_file_name, template_name=template_choice.capitalize()
+            ),
+            parse_mode='HTML')
 
     if document.mime_type == DOCX_MIME_TYPE:
         edited_file_stream = await analyze_and_edit(file_path, template_choice)

@@ -3,8 +3,8 @@ from telegram.ext import ContextTypes
 
 from app.common.constants import HELP_MESSAGE, START_MESSAGE, STOP_MESSAGE
 from app.config import DEBUG, logger
-from app.utils.keyboard import main_menu_markup, return_back
 from app.utils.bot_utils import send_message_or_edit_text
+from app.utils.keyboard import main_menu_markup, return_back
 
 
 async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):

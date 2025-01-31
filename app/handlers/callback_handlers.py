@@ -5,11 +5,10 @@ from app.common.constants import ALLOWED_TEMPLATES
 from app.common.enums import Callback, CVTemplate, Reply
 from app.config import DEBUG, logger
 from app.handlers.command_handlers import start_bot, stop_bot
-from app.utils.keyboard import (
-    chosen_template_markup, evaluate_cv_markup, return_back
-)
 from app.utils.bot_utils import (send_message_or_edit_text,
                                  update_template_choice)
+from app.utils.keyboard import (chosen_template_markup, evaluate_cv_markup,
+                                return_back)
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

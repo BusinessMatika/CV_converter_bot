@@ -39,10 +39,14 @@ class Handler(Enum):
     START = 'start'
     STOP = 'stop'
 
-
 class Table(Enum):
     # Borders
-    TOP = '<w:top w:val="single" w:sz="8" w:space="0" w:color="E14919"/>'
+    BM_BOTTOM = '<w:bottom w:val="single" w:sz="8" w:space="0" w:color="E14919"/>'
+    BM_TOP = '<w:top w:val="single" w:sz="8" w:space="0" w:color="E14919"/>'
+    HUNTERCORE_BOTTOM = '<w:bottom w:val="single" w:sz="8" w:space="0" w:color="00ffff"/>'
+    HUNTERCORE_TOP = '<w:top w:val="single" w:sz="8" w:space="0" w:color="00ffff"/>'
+    TELESCOPE_BOTTOM = '<w:bottom w:val="single" w:sz="8" w:space="0" w:color="a8caf8"/>'
+    TELESCOPE_TOP = '<w:top w:val="single" w:sz="8" w:space="0" w:color="a8caf8"/>'
     TRANSCEND = '<w:top w:val="nil" w:sz="0" w:space="0" w:color="auto"/>'
     STYLE = 'Table Grid'
     # Dimensions
@@ -106,10 +110,10 @@ class Style(Enum):
     BM_FOOTER_WD = 3.56
     BM_HEADER_H = 0.92
     BM_HEADER_WD = 4.76
-    HUNT_HEADER_H = 1.28
-    HUNT_HEADER_WD = 6.56
-    TEL_HEADER_H = 0.97
-    TEL_HEADER_WD = 4.52
+    HUNT_HEADER_H = 0.92 #1.28
+    HUNT_HEADER_WD = 4.76 #6.56
+    TEL_HEADER_H = 0.92 #0.97
+    TEL_HEADER_WD = 4.76 #4.52
     NINE = 9
     TEN = 10
     TWENTY = 20
@@ -218,6 +222,11 @@ class Reply(Enum):
     EDIT_CV = (
         'Вы выбрали: <b>"Отредактировать CV"</b>.\n\n'
         'Теперь выберете необходимый шаблон для CV.'
+    )
+    EDIT_CV_EXECUTION = (
+        'Файл <b>"{file_name}"</b> успешно загружен и будет '
+        'преобразован в шаблон <b>"{template_name}"</b>.\n\n'
+        'Дождитесь загрузки файла.'
     )
     NOT_EXIST = 'Опция <b>"{query}"</b> пока недоступна.'
     SUCCESS = 'Вот ваш обновлённый файл с CV!'

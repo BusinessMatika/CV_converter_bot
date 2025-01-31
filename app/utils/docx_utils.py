@@ -13,9 +13,12 @@ from .table_utils import create_experiences_table, create_skills_table
 
 def generate_docx_from_json(data, output_stream, template_choice):
     document = Document()
-    template_choice = template_choice.strip().lower()
     if not template_choice:
-        logger.error("template_choice is None or empty in generate_docx_from_json!")
+        logger.error(
+            f'Invalid template choice in generate_docx_from_json: "{template_choice}". '
+            f'Default template "{CVTemplate.BUSINESSMATIKA.value} will be used.'
+        )
+        template_choice = CVTemplate.BUSINESSMATIKA.value
 
     if template_choice == CVTemplate.BUSINESSMATIKA.value:
         add_images_to_header_footer(
@@ -33,16 +36,7 @@ def generate_docx_from_json(data, output_stream, template_choice):
             document, TELESCOPE_HEADER_PATH, Style.TEL_HEADER_WD.value,
             Style.TEL_HEADER_H.value
         )
-    else:
-        logger.error(
-            "Invalid template choice in generate_docx_from_json: {template_choice}"
-        )
-        add_images_to_header_footer(
-            document,
-            BM_HEADER_PATH, Style.BM_HEADER_WD.value, Style.BM_HEADER_H.value,
-            BM_FOOTER_PATH, Style.BM_FOOTER_WD.value, Style.BM_FOOTER_H.value
-        )
-
+    
     header = data[JSONData.HEADER.value]
     sections = data[JSONData.SECTIONS.value]
 
@@ -103,12 +97,12 @@ def generate_docx_from_json(data, output_stream, template_choice):
         document, experiences[JSONData.TITLE.value],
         None, set_raleway_medium, set_raleway
     )
-    create_experiences_table(document, experiences[JSONData.ITEMS.value])
+    create_experiences_table(document, experiences[JSONData.ITEMS.value], template_choice)
 
     # Education
     education = sections[JSONData.EDUCATION.value]
     add_section(
-        document, education[JSONData.TITLE.value],
+        document, f'\n{education[JSONData.TITLE.value]}',
         None, set_raleway_medium, set_raleway
     )
     add_bullet_list(
