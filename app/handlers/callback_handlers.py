@@ -1,14 +1,15 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from app.common.constants import ALLOWED_TEMPLATES
-from app.common.enums import Callback, CVTemplate, Reply
+from app.common.constants import ALLOWED_LANGUAGES
+from app.common.enums import Callback, CVTemplate, CVTranslation, Reply
 from app.config import DEBUG, logger
 from app.handlers.command_handlers import start_bot, stop_bot
-from app.utils.bot_utils import (send_message_or_edit_text,
-                                 update_template_choice)
-from app.utils.keyboard import (chosen_template_markup, evaluate_cv_markup,
-                                return_back)
+from app.utils.bot_utils import (get_user_template_choice,
+                                 send_message_or_edit_text,
+                                 update_language_choice)
+from app.utils.keyboard import (chosen_CV_language, chosen_template_markup,
+                                evaluate_cv_markup, return_back)
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -17,13 +18,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     user_id = str(query.from_user.id)
 
-    if (template_choice := data) in ALLOWED_TEMPLATES:
-        logger.info(
-            f'User {user_id} choose one of templates: {template_choice}.')
+    if data in ALLOWED_LANGUAGES:
         if not DEBUG:
-            update_template_choice(user_id, template_choice)
-            logger.info(
-                f'Template {template_choice} updated in DB by user {user_id}.')
+            template_choice = get_user_template_choice(user_id)
+            update_language_choice(user_id, data)
+        else:
+            template_choice = context.user_data.get('cv_template')
+            language_choice = context.user_data.get('chosen_language')
 
     handlers = {
         Callback.EDIT_CV.value: lambda update, context: send_message_or_edit_text(
@@ -36,21 +37,33 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             Reply.TEMPLATE_CHOICE.value.format(
                 template=CVTemplate.BUSINESSMATIKA.value.title()
             ),
-            reply_markup=return_back(Callback.EDIT_CV.value),
+            reply_markup=chosen_CV_language(Callback.EDIT_CV.value),
             parse_mode='HTML'
         ),
         Callback.HUNTERCORE.value: lambda update, context: send_message_or_edit_text(
             update, context, Reply.TEMPLATE_CHOICE.value.format(
                 template=CVTemplate.HUNTERCORE.value.title()
             ),
-            reply_markup=return_back(Callback.EDIT_CV.value),
+            reply_markup=chosen_CV_language(Callback.EDIT_CV.value),
             parse_mode='HTML'
         ),
         Callback.TELESCOPE.value: lambda update, context: send_message_or_edit_text(
             update, context, Reply.TEMPLATE_CHOICE.value.format(
                 template=CVTemplate.TELESCOPE.value.title()
             ),
-            reply_markup=return_back(Callback.EDIT_CV.value),
+            reply_markup=chosen_CV_language(Callback.EDIT_CV.value),
+            parse_mode='HTML'
+        ),
+        Callback.RUSSIAN.value: lambda update, context: send_message_or_edit_text(
+            update, context, Reply.TRANSLATION_CHOICE.value.format(
+                language=CVTranslation.RUSSIAN.value
+            ), reply_markup=return_back(template_choice),
+            parse_mode='HTML'
+        ),
+        Callback.ENGLISH.value: lambda update, context: send_message_or_edit_text(
+            update, context, Reply.TRANSLATION_CHOICE.value.format(
+                language=CVTranslation.ENGLISH.value
+            ), reply_markup=return_back(template_choice),
             parse_mode='HTML'
         ),
         Callback.TEXT.value: lambda update, context: send_message_or_edit_text(

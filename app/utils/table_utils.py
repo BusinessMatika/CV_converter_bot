@@ -21,10 +21,10 @@ def add_experience_left_cell(cell, experience):
     )
 
 
-def add_experience_right_cell(cell, experience):
+def add_experience_right_cell(cell, experience, index):
     paragraph = cell.paragraphs[Number.ZERO.value]
     paragraph.add_run('\n')
-    for title, key, new_line in JSONData.PROJECT.value:
+    for title, key, new_line in JSONData.PROJECT.value[index]:
         add_text(
             paragraph, f'{title}', set_raleway_medium,
             font_size=Style.NINE.value
@@ -34,7 +34,7 @@ def add_experience_right_cell(cell, experience):
             set_raleway, font_size=Style.NINE.value, new_line=new_line
         )
 
-    for title, key in JSONData.TASKS_ACHIEVEMENTS.value:
+    for title, key in JSONData.TASKS_ACHIEVEMENTS.value[index]:
         section_paragraph = cell.add_paragraph()
         add_text(
             section_paragraph, f'\n{title}', set_raleway_medium,
@@ -45,7 +45,7 @@ def add_experience_right_cell(cell, experience):
             font_size=Style.NINE.value, bullet_color=Style.HEX_GREY.value
         )
 
-    for title, key in JSONData.TEAM_STACK.value:
+    for title, key in JSONData.TEAM_STACK.value[index]:
         section_paragraph = cell.add_paragraph()
         add_text(
             section_paragraph, title, set_raleway_medium,
@@ -59,7 +59,7 @@ def add_experience_right_cell(cell, experience):
     cell.add_paragraph()
 
 
-def create_experiences_table(document, experiences, template_choice):
+def create_experiences_table(document, experiences, template_choice, index):
     table = document.add_table(rows=Table.ROWS.value, cols=Table.COLS.value)
     table.style = Table.STYLE.value
 
@@ -73,7 +73,7 @@ def create_experiences_table(document, experiences, template_choice):
         right_cell.width = Inches(4.0)  # 2/3 of A4
 
         add_experience_left_cell(left_cell, experience)
-        add_experience_right_cell(right_cell, experience)
+        add_experience_right_cell(right_cell, experience, index)
 
     if template_choice == CVTemplate.BUSINESSMATIKA.value:
         add_style_table(table, Table.BM_TOP.value, Table.BM_BOTTOM.value)

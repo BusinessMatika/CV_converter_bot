@@ -1,10 +1,38 @@
-from app.common.constants import ALLOWED_TEMPLATES
+from app.common.constants import ALLOWED_LANGUAGES, ALLOWED_TEMPLATES
 from app.config import DEBUG, DynamoDB, logger
 
 if not DEBUG:
     import boto3
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table(DynamoDB)
+
+
+def update_language_choice(user_id, language_choice):
+    try:
+        response = table.update_item(
+            Key={'user_id': user_id},
+            UpdateExpression="SET language_choice = :language_choice",
+            ExpressionAttributeValues={':language_choice': language_choice},
+            ReturnValues="ALL_NEW"
+        )
+        logger.info(f"Language update succeeded: {response}")
+        return response
+    except Exception as e:
+        logger.error(f"Error updating language_choice: {str(e)}")
+        return None
+
+
+def get_user_language_choice(user_id):
+    try:
+        response = table.get_item(Key={'user_id': user_id})
+        if 'Item' in response:
+            return response['Item'].get('language_choice', None)
+        else:
+            logger.info(f"No language_choice found for {user_id}")
+            return None
+    except Exception as e:
+        logger.error(f"Error getting language_choice: {str(e)}")
+        return None
 
 
 def update_template_choice(user_id, template_choice):
@@ -46,8 +74,11 @@ async def send_message_or_edit_text(update, context, message, reply_markup=None,
     # If button <button_name> is pressed.
     elif update.callback_query:
         # For local develop usage only!
-        if DEBUG and update.callback_query.data in ALLOWED_TEMPLATES:
-            context.user_data['cv_template'] = update.callback_query.data
+        if DEBUG:
+            if update.callback_query.data in ALLOWED_TEMPLATES:
+                context.user_data['cv_template'] = update.callback_query.data
+            elif update.callback_query.data in ALLOWED_LANGUAGES:
+                context.user_data['chosen_language'] = update.callback_query.data
         query = update.callback_query
         await query.edit_message_text(
             text=message,

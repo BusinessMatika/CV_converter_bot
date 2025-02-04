@@ -9,8 +9,7 @@ def return_back(
     return_step: Optional[str] = None,
     as_markup: bool = True
 ) -> Union[list[InlineKeyboardButton], InlineKeyboardMarkup]:
-    
-    
+
     if return_step is None:
         return_step = Callback.RETURN_TO_START.value
 
@@ -44,12 +43,16 @@ def main_menu_markup(return_step: Optional[Callback] = None):
     return InlineKeyboardMarkup(keyboard)
 
 
-def ediv_cv_markup():
-    ...
-
-
 def chosen_CV_language(return_step: Optional[Callback] = None):
-    ...
+    keyboard = [
+        [InlineKeyboardButton(
+            Button.RUSSIAN.value, callback_data=Callback.RUSSIAN.value)],
+        [InlineKeyboardButton(
+            Button.ENGLISH.value, callback_data=Callback.ENGLISH.value)]
+    ]
+    if return_step:
+        keyboard.extend(return_back(return_step, False))
+    return InlineKeyboardMarkup(keyboard)
 
 
 def chosen_template_markup(return_step: Optional[Callback] = None):

@@ -1,7 +1,5 @@
-import fitz  # PyMuPDF
-
-
 def extract_text_from_pdf(file_path: str) -> str:
+    import fitz
     """Извлекает текст из PDF, обрабатывая таблицы и списки."""
     doc = fitz.open(file_path)
     extracted_text = []

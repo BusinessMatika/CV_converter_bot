@@ -36,6 +36,10 @@ STOP_MESSAGE = (
     'Ты остановил работу бота. Для возобновления работы нажми /start.'
 )
 ALLOWED_TEMPLATES = ('businessmatika', 'huntercore', 'telescope')
+ALLOWED_LANGUAGES = {
+    'russian': 'русском',
+    'english': 'английском'
+}
 
 # Docx:
 DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
