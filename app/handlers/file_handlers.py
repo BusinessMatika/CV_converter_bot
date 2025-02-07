@@ -1,3 +1,4 @@
+import io
 import os
 
 from telegram import Update
@@ -58,13 +59,15 @@ async def handle_file(
             parse_mode='HTML')
 
     if document.mime_type == DOCX_MIME_TYPE:
-        edited_file_stream = await analyze_and_edit(file_path, template_choice, language_choice)
+        edited_file_stream = await analyze_and_edit(
+            update, context, template_choice, language_choice, user_file=file_path)
         new_file_name = f"edited_{user_file_name}"
         logger.info(f"DOCX file edited: {new_file_name}")
     elif document.mime_type == PDF_MIME_TYPE:
         pdf_text = extract_text_from_pdf(file_path)
         if pdf_text:
-            edited_file_stream = await analyze_and_edit(pdf_text, template_choice, language_choice)
+            edited_file_stream = await analyze_and_edit(
+                update, context, template_choice, language_choice, user_text=pdf_text)
             new_file_name = f"edited_{user_file_name.rsplit('.', 1)[0]}.docx"
             logger.info(f"PDF file edited: {new_file_name}")
     else:
@@ -74,6 +77,21 @@ async def handle_file(
         return
 
     if edited_file_stream:
+        if isinstance(edited_file_stream, str):  # Если вернулся путь к файлу
+            logger.error(f"Ошибка при обработке файла: {edited_file_stream}")
+            await update.message.reply_text(Reply.BAD_RESPONSE.value)
+            os.remove(file_path)
+            return
+
+        elif isinstance(edited_file_stream, io.BytesIO):  # Если уже BytesIO, проверяем, не пустой ли он
+            if edited_file_stream.getbuffer().nbytes == 0:
+                logger.error("Ошибка: файл пуст.")
+                await update.message.reply_text(Reply.BAD_RESPONSE.value)
+                os.remove(file_path)
+                return
+
+        logger.info(f"Отправляем файл {new_file_name} пользователю.")
+
         await update.message.reply_document(
             document=edited_file_stream,
             filename=new_file_name,
@@ -83,6 +101,7 @@ async def handle_file(
     else:
         await update.message.reply_text(Reply.COMPATIBLE.value)
         logger.warning("File could not be edited.")
+
 
     os.remove(file_path)
     logger.info(f"Temporary file {file_path} removed.")

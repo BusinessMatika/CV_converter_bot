@@ -1,9 +1,12 @@
 import io
 import json
 import os
+from typing import Optional
 
 import openai
 from docx import Document
+from telegram import Update
+from telegram.ext import ContextTypes
 
 from app.common.enums import OpenAI
 from app.config import OPENAI_API_KEY, logger
@@ -14,51 +17,67 @@ openai.api_key = OPENAI_API_KEY
 
 
 def _extract_table_text(table):
-    # Extract text from a table using python-docx's Document
+    """Retrieve text from table."""
     table_text = []
     for row in table.rows:
-        row_text = [cell.text.strip() for cell in row.cells]
-        table_text.append(row_text)
-    return table_text
+        row_text = [cell.text.strip() if cell.text.strip() else "-" for cell in row.cells]  # "-" для пустых ячеек
+        if any(cell != "-" for cell in row_text):  # Добавляем только строки с данными
+            table_text.append("\t".join(row_text))  # Объединяем ячейки через табуляцию
+    return "\n".join(table_text).strip()  # Возвращаем строку с переносами строк между рядами
 
 
-async def analyze_and_edit(user_text: str, template_choice: str, language_choice: str) -> io.BytesIO:
-    """Analyzes and edits raw text content and tables."""
+def extract_text_from_docx(doc_path):
+    """
+    DOCX parser: retrieve text, lists, tables.
+    """
+    if not os.path.exists(doc_path):
+        logger.error(f"File {doc_path} not found.")
+        return "Error: File not found."
 
-    # Проверка существования файла перед открытием
-    if user_text.endswith('.docx'):
-        if not os.path.exists(user_text):
-            logger.error(f"Файл {user_text} не найден.")
-            return "Error: File not found."
+    doc = Document(doc_path)
+    extracted_text = []
 
-        user_doc = Document(user_text)
-        full_text = []
+    # Обработка параграфов
+    for para in doc.paragraphs:
+        if para.text.strip():  # Проверка, что текст не пустой
+            extracted_text.append(para.text)
 
-        # Read elements one-by-one (paragraphs and tables)
-        for element in user_doc.element.body:
-            if element.tag.endswith("p"):  # paragraph
-                text = element.text.strip()
-                if text:
-                    full_text.append(text)
-            elif element.tag.endswith("tbl"):  # table
-                # Convert the CT_Tbl element into a Table object
-                table = user_doc.tables[len(full_text) // 2]  # Grab the corresponding Table object
-                table_text = _extract_table_text(table)
+    # Обработка таблиц
+    for table in doc.tables:
+        table_text = _extract_table_text(table)
+        if table_text.strip():  # Проверка на пустоту таблицы
+            extracted_text.append(table_text)
 
-                # Convert each row of the table into a string and join them
-                table_text_str = "\n".join(["\t".join(row) for row in table_text])
-                full_text.append(table_text_str)
+    if not extracted_text:
+        logger.error("File is empty.")
+        return "Error: No readable content found."
 
-        user_text = "\n".join(full_text).strip()
+    return "\n".join(extracted_text).strip()  # Объединяем все текстовые данные в одну строку
 
+
+async def analyze_and_edit(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
+        template_choice: str, language_choice: str,
+        user_file: Optional[str] = None, user_text: Optional[str] = None
+) -> io.BytesIO:
+    """Analyze and edit CV text taking into account styles."""
+
+    if user_file:
+        text = extract_text_from_docx(user_file)
+    else:
+        text = user_text
+
+    if not text:
+        logger.error("File is empty.")
+        return "Error: No readable content found."
+
+    # JSON-template choose based on language choice
     if language_choice == 'russian':
         json_choice = OpenAI.JSON_RUS.value
         prompt_choice = language_choice
-        logger.info(f'JSON and PROMPT chosen for russian language.')
     elif language_choice == 'english':
         json_choice = OpenAI.JSON_ENG.value
         prompt_choice = language_choice
-        logger.info(f'JSON and PROMPT chosen for english language.')
     else:
         logger.error("Ошибка: неверный выбор языка")
         return "Invalid language choice"
@@ -68,11 +87,11 @@ async def analyze_and_edit(user_text: str, template_choice: str, language_choice
         response = openai.chat.completions.create(
             model=OpenAI.MODEL.value,
             messages=OpenAI.get_messages(
-                user_content=user_text,
+                user_content=text,
                 json_str=json_choice,
                 prompt_choice=prompt_choice
             ),
-            temperature=0, top_p=0.1
+            temperature=0
         )
         gpt_response = response.choices[0].message.content
     except Exception as e:
@@ -92,15 +111,9 @@ async def analyze_and_edit(user_text: str, template_choice: str, language_choice
         except:
             return 'Response error from OpenAI'
 
-    # Проверка наличия ключевых секций в JSON
     if "sections" not in gpt_json:
         logger.error("Ошибка: JSON-ответ не содержит ключ 'sections'.")
         return "Error: Missing 'sections' in response."
-
-    for section in json_choice["sections"]:
-        if section not in gpt_json["sections"] or not gpt_json["sections"][section].get("title"):
-            logger.error(f"Ошибка: секция {section} не заполнена корректно")
-            return f"Error: section {section} is not filled correctly."
 
     # Create docx from JSON
     output_stream = io.BytesIO()
