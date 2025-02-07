@@ -32,6 +32,7 @@ def add_images_to_header_footer(
         width=Cm(header_width),
         height=Cm(header_height)
     )
+    header_paragraph.add_run("\n")
 
     # Add footer
     if footer_image_path:
@@ -76,18 +77,35 @@ def set_marker_style(
     size_element.set(qn('w:val'), font_size_twips)
 
 
-def add_style_table(table, top_border):
+def add_style_table(table, top_border, bottom_border=None):
     """
-    Add style to table, making only the top border visible.
+    Add style to table, making only the top border visible
+    and optionally adding bottom border.
     """
     for i, row in enumerate(table.rows):
         for cell in row.cells:
             tc = cell._element.get_or_add_tcPr()
             tc.append(parse_xml(r'''
-                <w:tcBorders {}>
-                    {border}
+                <w:tcBorders {namespace}>
+                    {top_border}
                     <w:left w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
                     <w:bottom w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
                     <w:right w:val="nil" w:sz="0" w:space="0" w:color="auto"/>
                 </w:tcBorders>
-            '''.format(nsdecls('w'), border=top_border)))
+            '''.format(
+                namespace=nsdecls('w'),
+                top_border=top_border
+            )))
+
+    if bottom_border:
+        last_row = table.rows[-1]
+        for cell in last_row.cells:
+            tc = cell._element.get_or_add_tcPr()
+            tc.append(parse_xml(r'''
+                <w:tcBorders {namespace}>
+                    {bottom_border}
+                </w:tcBorders>
+            '''.format(
+                namespace=nsdecls('w'),
+                bottom_border=bottom_border
+            )))

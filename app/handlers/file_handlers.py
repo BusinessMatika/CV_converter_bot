@@ -1,17 +1,23 @@
+import io
 import os
 
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from app.common.constants import DOCX_MIME_TYPE, PDF_MIME_TYPE
+from app.common.constants import (ALLOWED_LANGUAGES, DOCX_MIME_TYPE,
+                                  PDF_MIME_TYPE)
 from app.common.enums import Reply
 from app.config import DEBUG, logger
-from app.utils.bot_utils import get_user_template_choice
+from app.utils.bot_utils import (get_user_language_choice,
+                                 get_user_template_choice,
+                                 send_message_or_edit_text)
 from app.utils.openai_utils import analyze_and_edit
 from app.utils.pdf_utils import extract_text_from_pdf
 
 
-async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE, template=None):
+async def handle_file(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
+        template=None, language=None):
     """
     Handles the file received from the user, processes it,
     and sends back the edited document.
@@ -22,27 +28,46 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE, templa
     logger.info(f"Received file: {user_file_name}")
     if DEBUG:
         template_choice = context.user_data.get('cv_template')
+        language_choice = context.user_data.get('chosen_language')
         logger.info(
-            f'CV will be edited in accordance with template: {template_choice}')
+            f'CV will be edited in accordance with template: {template_choice}. '
+            f'CV language will be {language_choice}.'
+        )
         file_path = f'{user_file_name}'
     else:
         template_choice = get_user_template_choice(user_id)
+        language_choice = get_user_language_choice(user_id)
         logger.info(
-            f'CV will be edited in accordance with template: {template_choice}')
+            f'CV will be edited in accordance with template: {template_choice}. '
+            f'CV language will be {language_choice}.'
+        )
         file_path = os.path.join('/tmp', user_file_name)
 
     file = await context.bot.get_file(document.file_id)
     await file.download_to_drive(file_path)
     logger.info(f'CV saved to {file_path}')
 
+    if language_choice:
+        await send_message_or_edit_text(
+            update,
+            context,
+            Reply.EDIT_CV_EXECUTION.value.format(
+                file_name=user_file_name,
+                template_name=template_choice.capitalize(),
+                language_name=ALLOWED_LANGUAGES.get(language_choice)
+            ),
+            parse_mode='HTML')
+
     if document.mime_type == DOCX_MIME_TYPE:
-        edited_file_stream = await analyze_and_edit(file_path, template_choice)
+        edited_file_stream = await analyze_and_edit(
+            update, context, template_choice, language_choice, user_file=file_path)
         new_file_name = f"edited_{user_file_name}"
         logger.info(f"DOCX file edited: {new_file_name}")
     elif document.mime_type == PDF_MIME_TYPE:
         pdf_text = extract_text_from_pdf(file_path)
         if pdf_text:
-            edited_file_stream = await analyze_and_edit(pdf_text, template_choice)
+            edited_file_stream = await analyze_and_edit(
+                update, context, template_choice, language_choice, user_text=pdf_text)
             new_file_name = f"edited_{user_file_name.rsplit('.', 1)[0]}.docx"
             logger.info(f"PDF file edited: {new_file_name}")
     else:
@@ -52,6 +77,21 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE, templa
         return
 
     if edited_file_stream:
+        if isinstance(edited_file_stream, str):  # Если вернулся путь к файлу
+            logger.error(f"Ошибка при обработке файла: {edited_file_stream}")
+            await update.message.reply_text(Reply.BAD_RESPONSE.value)
+            os.remove(file_path)
+            return
+
+        elif isinstance(edited_file_stream, io.BytesIO):  # Если уже BytesIO, проверяем, не пустой ли он
+            if edited_file_stream.getbuffer().nbytes == 0:
+                logger.error("Ошибка: файл пуст.")
+                await update.message.reply_text(Reply.BAD_RESPONSE.value)
+                os.remove(file_path)
+                return
+
+        logger.info(f"Отправляем файл {new_file_name} пользователю.")
+
         await update.message.reply_document(
             document=edited_file_stream,
             filename=new_file_name,
@@ -61,6 +101,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE, templa
     else:
         await update.message.reply_text(Reply.COMPATIBLE.value)
         logger.warning("File could not be edited.")
+
 
     os.remove(file_path)
     logger.info(f"Temporary file {file_path} removed.")

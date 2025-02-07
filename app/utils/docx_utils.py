@@ -1,7 +1,7 @@
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
-from app.common.enums import CVTemplate, JSONData, Style
+from app.common.enums import CVTemplate, CVTranslation, JSONData, Style
 from app.config import (BM_FOOTER_PATH, BM_HEADER_PATH, HUNTERCORE_HEADER_PATH,
                         TELESCOPE_HEADER_PATH, logger)
 
@@ -11,11 +11,23 @@ from .style_utils import add_images_to_header_footer
 from .table_utils import create_experiences_table, create_skills_table
 
 
-def generate_docx_from_json(data, output_stream, template_choice):
+def generate_docx_from_json(data, output_stream, template_choice, language_choice):
     document = Document()
-    template_choice = template_choice.strip().lower()
     if not template_choice:
-        logger.error("template_choice is None or empty in generate_docx_from_json!")
+        logger.error(
+            f'Invalid template choice in generate_docx_from_json: "{template_choice}". '
+            f'Default template "{CVTemplate.BUSINESSMATIKA.value} will be used.'
+        )
+        template_choice = CVTemplate.BUSINESSMATIKA.value
+
+    if not language_choice:
+        logger.error(
+            f'Invalid language choice in generate_docx_from_json: "{language_choice}". '
+            f'Default language "{CVTranslation.RUSSIAN.value} will be used.'
+        )
+        template_choice = CVTranslation.RUSSIAN.value
+
+    index = 0 if language_choice == 'russian' else 1
 
     if template_choice == CVTemplate.BUSINESSMATIKA.value:
         add_images_to_header_footer(
@@ -33,16 +45,7 @@ def generate_docx_from_json(data, output_stream, template_choice):
             document, TELESCOPE_HEADER_PATH, Style.TEL_HEADER_WD.value,
             Style.TEL_HEADER_H.value
         )
-    else:
-        logger.error(
-            "Invalid template choice in generate_docx_from_json: {template_choice}"
-        )
-        add_images_to_header_footer(
-            document,
-            BM_HEADER_PATH, Style.BM_HEADER_WD.value, Style.BM_HEADER_H.value,
-            BM_FOOTER_PATH, Style.BM_FOOTER_WD.value, Style.BM_FOOTER_H.value
-        )
-
+    
     header = data[JSONData.HEADER.value]
     sections = data[JSONData.SECTIONS.value]
 
@@ -60,7 +63,7 @@ def generate_docx_from_json(data, output_stream, template_choice):
 
     # Grade
     add_section(
-        document, JSONData.GRADE_TITLE.value,
+        document, JSONData.GRADE_TITLE.value[index],
         header.get(JSONData.GRADE_DATA.value, ''),
         set_raleway_medium, set_raleway
     )
@@ -87,12 +90,12 @@ def generate_docx_from_json(data, output_stream, template_choice):
 
     # About, Repository
     add_section(
-        document, JSONData.DESCR.value,
+        document, JSONData.DESCR.value[index],
         header.get(JSONData.ABOUT.value, ''),
         set_raleway_medium, set_raleway
     )
     add_section(
-        document, JSONData.CODE.value,
+        document, JSONData.CODE.value[index],
         header.get(JSONData.REPO.value, ''),
         set_raleway_medium, set_raleway
     )
@@ -103,12 +106,14 @@ def generate_docx_from_json(data, output_stream, template_choice):
         document, experiences[JSONData.TITLE.value],
         None, set_raleway_medium, set_raleway
     )
-    create_experiences_table(document, experiences[JSONData.ITEMS.value])
+    create_experiences_table(
+        document, experiences[JSONData.ITEMS.value],
+        template_choice, index)
 
     # Education
     education = sections[JSONData.EDUCATION.value]
     add_section(
-        document, education[JSONData.TITLE.value],
+        document, f'\n{education[JSONData.TITLE.value]}',
         None, set_raleway_medium, set_raleway
     )
     add_bullet_list(
