@@ -7,19 +7,20 @@ from telegram.error import BadRequest
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
                           MessageHandler, filters)
 
-from app.common.constants import ALLOWED_LANGUAGES, ALLOWED_TEMPLATES
+from app.common.constants import ALLOWED_LANGUAGES, ALLOWED_STATES, ALLOWED_TEMPLATES
 from app.common.enums import Handler
 from app.config import TELEGRAM_TOKEN, logger
 from app.handlers.callback_handlers import handle_callback
 from app.handlers.command_handlers import (help_command, start_bot, stop_bot,
                                            unknown)
-from app.utils.bot_utils import update_language_choice, update_template_choice
+from app.utils.bot_utils import update_language_choice, update_state, update_template_choice
 
 from .handlers.file_handlers import handle_file
 
 
 async def process_event(
-        event: dict[str, Any], template: Optional[str], language: Optional[str]
+        event: dict[str, Any], template: Optional[str],
+        language: Optional[str], state: Optional[str]
 ) -> None:
     """Process a Telegram event and applies the appropriate handlers."""
     if not TELEGRAM_TOKEN:
@@ -35,7 +36,7 @@ async def process_event(
         CommandHandler(Handler.STOP.value, stop_bot),
         MessageHandler(
             filters.Document.ALL, lambda update, context: handle_file(
-                update, context, template, language
+                update, context, template, language, state
             )
         ),
         CallbackQueryHandler(handle_callback),
@@ -58,11 +59,11 @@ def lambda_handler(event: dict[str, Any], context: Any) -> Dict[str, Any]:
     """Lambda function to process events from SQS and forward to Telegram."""
     message = json.loads(event['Records'][0]['body'])
 
-    template_data, language_data = None, None
+    template_data, language_data, state = None, None, None
     if 'body' in message:
         body_content = json.loads(message['body'])
         callback_query = body_content.get('callback_query')
-        #
+
         if callback_query:
             data = callback_query.get('data')
             user_id = str(callback_query['from']['id'])
@@ -74,13 +75,16 @@ def lambda_handler(event: dict[str, Any], context: Any) -> Dict[str, Any]:
                 template_data = data
                 update_template_choice(user_id, template_data)
                 logger.info(f'Template choice {template_data} updated for user {user_id}.')
-
+            elif data in ALLOWED_STATES:
+                state = data
+                update_state(user_id, state)
+                logger.info(f'State {state} updated for user {user_id}.')
     else:
         logger.error('No body found in message.')
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(
-        process_event(message, template_data, language_data)
+        process_event(message, template_data, language_data, state)
     )
     return {
         'statusCode': 200,

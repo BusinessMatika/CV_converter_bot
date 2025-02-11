@@ -8,14 +8,34 @@ from app.common.constants import (ALLOWED_LANGUAGES, DOCX_MIME_TYPE,
                                   PDF_MIME_TYPE)
 from app.common.enums import Reply
 from app.config import DEBUG, logger
-from app.utils.bot_utils import (get_user_language_choice,
-                                 get_user_template_choice,
-                                 send_message_or_edit_text)
+from app.utils.bot_utils import (
+                                get_state,
+                                get_user_language_choice,
+                                get_user_template_choice,
+                                send_message_or_edit_text,
+                                update_state
+)
 from app.utils.openai_utils import analyze_and_edit
 from app.utils.pdf_utils import extract_text_from_pdf
 
 
 async def handle_file(
+        update: Update, context: ContextTypes.DEFAULT_TYPE,
+        template=None, language=None, state=None
+):
+    user_id = str(update.message.from_user.id)
+    state = context.user_data.get("state") if DEBUG else get_state(user_id)
+    logger.info(f'STATE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {state}')
+    if state == 'edit_cv':
+        logger.info(f'User {update.message.from_user.full_name} chose command {state}')
+        await edit_cv(update, context, template, language)
+    elif state == 'cv_evaluation':
+        logger.info(f'User {update.message.from_user.full_name} chose command {state}')
+    else:
+        await update.message.reply_text("Неизвестная команда. Попробуйте снова.")
+
+
+async def edit_cv(
         update: Update, context: ContextTypes.DEFAULT_TYPE,
         template=None, language=None):
     """
