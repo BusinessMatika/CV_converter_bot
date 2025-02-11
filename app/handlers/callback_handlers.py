@@ -21,17 +21,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data in ALLOWED_LANGUAGES:
         if not DEBUG:
             template_choice = get_user_template_choice(user_id)
-            update_language_choice(user_id, data)
         else:
             template_choice = context.user_data.get('cv_template')
-            language_choice = context.user_data.get('chosen_language')
 
-    handlers = {
+    command_handlers = {
         Callback.EDIT_CV.value: lambda update, context: send_message_or_edit_text(
             update, context, Reply.EDIT_CV.value,
             reply_markup=chosen_template_markup(Callback.RETURN_TO_START.value),
             parse_mode='HTML'
         ),
+        Callback.CV_EVALUATION.value: lambda update, context: send_message_or_edit_text(
+            update, context, Reply.CV_EVALUATION.value,
+            reply_markup=evaluate_cv_markup(Callback.RETURN_TO_START.value),
+            parse_mode='HTML'
+        )
+    }
+
+    template_handlers = {
         Callback.BUSINESSMATIKA.value: lambda update, context: send_message_or_edit_text(
             update, context,
             Reply.TEMPLATE_CHOICE.value.format(
@@ -53,7 +59,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ),
             reply_markup=chosen_CV_language(Callback.EDIT_CV.value),
             parse_mode='HTML'
-        ),
+        )
+    }
+
+    translation_handlers = {
         Callback.RUSSIAN.value: lambda update, context: send_message_or_edit_text(
             update, context, Reply.TRANSLATION_CHOICE.value.format(
                 language=CVTranslation.RUSSIAN.value
@@ -65,24 +74,29 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 language=CVTranslation.ENGLISH.value
             ), reply_markup=return_back(template_choice),
             parse_mode='HTML'
-        ),
+        )
+    }
+
+    system_handlers = {
+        Callback.RETURN_TO_START.value: lambda update, context: start_bot(update, context),
+        Callback.STOP_BOT.value: lambda update, context: stop_bot(update, context),
+    }
+
+    handlers = {
+        **command_handlers,
+        **template_handlers,
+        **translation_handlers,
+        **system_handlers,
         Callback.TEXT.value: lambda update, context: send_message_or_edit_text(
             update, context, Reply.VACANCY_TEXT.value,
             reply_markup=return_back(Callback.CV_EVALUATION.value),
             parse_mode='HTML'
         ),
         Callback.FILE.value: lambda update, context: send_message_or_edit_text(
-            update, context, Reply.VACANCY_TEXT.value,
+            update, context, Reply.VACANCY_FILE.value,
             reply_markup=return_back(Callback.CV_EVALUATION.value),
             parse_mode='HTML'
-        ),
-        Callback.CV_EVALUATION.value: lambda update, context: send_message_or_edit_text(
-            update, context, Reply.CV_EVALUATION.value,
-            reply_markup=evaluate_cv_markup(Callback.RETURN_TO_START.value),
-            parse_mode='HTML'
-        ),
-        Callback.RETURN_TO_START.value: lambda update, context: start_bot(update, context),
-        Callback.STOP_BOT.value: lambda update, context: stop_bot(update, context),
+        )
     }
 
     handler = handlers.get(query.data)
