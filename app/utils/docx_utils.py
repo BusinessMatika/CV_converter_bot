@@ -1,3 +1,5 @@
+import os
+
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
@@ -135,3 +137,43 @@ def generate_docx_from_json(data, output_stream, template_choice, language_choic
     )
 
     document.save(output_stream)
+
+
+def _extract_table_text(table):
+    """Retrieve text from table."""
+    table_text = []
+    for row in table.rows:
+        row_text = [cell.text.strip() if cell.text.strip() else "-" for cell in row.cells]  # "-" для пустых ячеек
+        if any(cell != "-" for cell in row_text):  # Добавляем только строки с данными
+            table_text.append("\t".join(row_text))  # Объединяем ячейки через табуляцию
+    return "\n".join(table_text).strip()  # Возвращаем строку с переносами строк между рядами
+
+
+def extract_text_from_docx(doc_path):
+    """
+    DOCX parser: retrieve text, lists, tables.
+    """
+    if not os.path.exists(doc_path):
+        logger.error(f"File {doc_path} not found.")
+        return "Error: File not found."
+
+    doc = Document(doc_path)
+    extracted_text = []
+
+    # Обработка параграфов
+    for para in doc.paragraphs:
+        if para.text.strip():  # Проверка, что текст не пустой
+            extracted_text.append(para.text)
+
+    # Обработка таблиц
+    for table in doc.tables:
+        table_text = _extract_table_text(table)
+        if table_text.strip():  # Проверка на пустоту таблицы
+            extracted_text.append(table_text)
+
+    if not extracted_text:
+        logger.error("File is empty.")
+        return "Error: No readable content found."
+
+    return "\n".join(extracted_text).strip()  # Объединяем все текстовые данные в одну строку
+

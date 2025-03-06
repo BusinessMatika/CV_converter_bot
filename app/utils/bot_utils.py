@@ -1,94 +1,103 @@
-from app.common.constants import ALLOWED_LANGUAGES, ALLOWED_STATES, ALLOWED_TEMPLATES
-from app.config import DEBUG, DynamoDB, logger
+from telegram import Update
+from telegram.ext import CallbackContext
+
+from app.common.constants import (ALLOWED_COMMANDS, ALLOWED_LANGUAGES,
+                                  ALLOWED_TEMPLATES, MAX_LENGTH)
+from app.config import DEBUG, EDIT_CV_DB, EVALUATE_VAC_CV_DB, logger
 
 if not DEBUG:
     import boto3
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(DynamoDB)
+    table_edit_cv = dynamodb.Table(EDIT_CV_DB)
+    table_evaluate_vac_cv = dynamodb.Table(EVALUATE_VAC_CV_DB)
+else:
+    table_edit_cv = None
+    table_evaluate_vac_cv = None
 
 
-def update_state(user_id, state):
+def update_user_data(
+        user_id, field_name, value,
+        context: CallbackContext, table
+):
+    """Update certain field in storage."""
     try:
-        response = table.update_item(
-            Key={'user_id': user_id},
-            UpdateExpression="SET command = :command",
-            ExpressionAttributeValues={':command': state},
-            ReturnValues="ALL_NEW"
-        )
-        logger.info(f"State update succeeded: {response}")
-        return response
-    except Exception as e:
-        logger.error(f"Error updating state: {str(e)}")
-        return None
-
-
-def get_state(user_id):
-    try:
-        response = table.get_item(Key={'user_id': user_id})
-        if 'Item' in response:
-            return response['Item'].get('command', None)
+        if DEBUG:
+            context.user_data[field_name] = value
+            return value
         else:
-            logger.info(f"No state found for {user_id}")
-            return None
+            response = table.update_item(
+                Key={'user_id': user_id},
+                UpdateExpression=f"SET {field_name} = :val",
+                ExpressionAttributeValues={':val': value},
+                ReturnValues="ALL_NEW"
+            )
+            logger.info(f"Table {table} update {field_name} succeeded: {response}")
+            return response
     except Exception as e:
-        logger.error(f"Error getting state: {str(e)}")
+        logger.error(f"Error updating {field_name}: {str(e)}")
         return None
 
 
-def update_language_choice(user_id, language_choice):
+def get_user_data(user_id, field_name, context: CallbackContext, table):
+    """Get certain field from storage."""
     try:
-        response = table.update_item(
-            Key={'user_id': user_id},
-            UpdateExpression="SET language_choice = :language_choice",
-            ExpressionAttributeValues={':language_choice': language_choice},
-            ReturnValues="ALL_NEW"
-        )
-        logger.info(f"Language update succeeded: {response}")
-        return response
-    except Exception as e:
-        logger.error(f"Error updating language_choice: {str(e)}")
-        return None
-
-
-def get_user_language_choice(user_id):
-    try:
-        response = table.get_item(Key={'user_id': user_id})
-        if 'Item' in response:
-            return response['Item'].get('language_choice', None)
+        if DEBUG:
+            return context.user_data.get(field_name, None)
         else:
-            logger.info(f"No language_choice found for {user_id}")
-            return None
+            response = table.get_item(Key={'user_id': user_id})
+            if 'Item' in response:
+                return response['Item'].get(field_name, None)
+            else:
+                logger.info(f"No {field_name} found for {user_id}")
+                return None
     except Exception as e:
-        logger.error(f"Error getting language_choice: {str(e)}")
+        logger.error(f"Error getting {field_name}: {str(e)}")
         return None
 
 
-def update_template_choice(user_id, template_choice):
-    try:
-        response = table.update_item(
-            Key={'user_id': user_id},
-            UpdateExpression="SET template_choice = :template_choice",
-            ExpressionAttributeValues={':template_choice': template_choice},
-            ReturnValues="ALL_NEW"
-        )
-        logger.info(f"Update succeeded: {response}")
-        return response
-    except Exception as e:
-        logger.error(f"Error updating template_choice: {str(e)}")
-        return None
+def update_vacancy(user_id, vacancy, context: CallbackContext):
+    return update_user_data(user_id, 'vacancy', vacancy, context, table_evaluate_vac_cv)
 
 
-def get_user_template_choice(user_id):
-    try:
-        response = table.get_item(Key={'user_id': user_id})
-        if 'Item' in response:
-            return response['Item'].get('template_choice', None)
-        else:
-            logger.info(f"No template_choice found for {user_id}")
-            return None
-    except Exception as e:
-        logger.error(f"Error getting template_choice: {str(e)}")
-        return None
+def get_vacancy(user_id, context: CallbackContext):
+    return get_user_data(user_id, 'vacancy', context, table_evaluate_vac_cv)
+
+
+def update_state(user_id, state, context: CallbackContext):
+    reset_state(user_id, context)
+    # Выбираем таблицу в зависимости от нового состояния
+    table = table_evaluate_vac_cv if state in ('cv_evaluation', 'waiting_for_cv') else table_edit_cv
+    return update_user_data(user_id, 'current_state', state, context, table)
+
+
+def reset_state(user_id, context: CallbackContext):
+    update_user_data(user_id, 'current_state', None, context, table_edit_cv)
+    update_user_data(user_id, 'current_state', None, context, table_evaluate_vac_cv)
+    logger.info(f'State обнулён: {get_state(user_id, context)}')
+
+
+def get_state(user_id, context: CallbackContext):
+    state_edit = get_user_data(user_id, 'current_state', context, table_edit_cv)
+    state_eval = get_user_data(user_id, 'current_state', context, table_evaluate_vac_cv)
+    if state_edit is not None:
+        return state_edit
+    return state_eval
+
+
+def update_language_choice(user_id, language_choice, context: CallbackContext):
+    return update_user_data(user_id, 'language_choice', language_choice, context, table_edit_cv)
+
+
+def get_user_language_choice(user_id, context: CallbackContext):
+    return get_user_data(user_id, 'language_choice', context, table_edit_cv)
+
+
+def update_template_choice(user_id, template_choice, context: CallbackContext):
+    return update_user_data(user_id, 'template_choice', template_choice, context, table_edit_cv)
+
+
+def get_user_template_choice(user_id, context: CallbackContext):
+    return get_user_data(user_id, 'template_choice', context, table_edit_cv)
 
 
 async def send_message_or_edit_text(update, context, message, reply_markup=None, parse_mode=None):
@@ -104,14 +113,36 @@ async def send_message_or_edit_text(update, context, message, reply_markup=None,
         # For local develop usage only!
         if DEBUG:
             if update.callback_query.data in ALLOWED_TEMPLATES:
-                context.user_data['cv_template'] = update.callback_query.data
+                context.user_data['template_choice'] = update.callback_query.data
             elif update.callback_query.data in ALLOWED_LANGUAGES:
-                context.user_data['chosen_language'] = update.callback_query.data
-            elif update.callback_query.data in ALLOWED_STATES:
-                context.user_data['state'] = update.callback_query.data
+                context.user_data['language_choice'] = update.callback_query.data
+            elif update.callback_query.data in ALLOWED_COMMANDS:
+                context.user_data['current_state'] = update.callback_query.data
         query = update.callback_query
         await query.edit_message_text(
             text=message,
             reply_markup=reply_markup,
             parse_mode=parse_mode
         )
+
+
+async def send_long_message(update: Update, text: str, parse_mode="HTML"):
+    """
+    Send message to user.
+    If len(text) > 4096, messages will be split and sent separately.
+    """
+    for i in range(0, len(text), MAX_LENGTH):
+        await update.message.reply_text(text[i:i + MAX_LENGTH], parse_mode=parse_mode)
+
+
+async def validate_input(state: str, update: Update) -> bool:
+    if state == 'waiting_for_cv':
+        if not update.message.document:
+            await update.message.reply_text('Пожалуйста, загрузите файл в формате ".docx" или ".pdf".')
+            return False
+    
+    elif state == 'edit_cv':
+        if not update.message.document and not update.callback_query:
+            await update.message.reply_text('Пожалуйста, совершите одно из двух действий согласно инструкции: выберите команду на клавиатуре или загрузите файл.')
+            return False
+    return True

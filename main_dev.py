@@ -27,6 +27,7 @@ async def main():
         CommandHandler(Handler.START.value, start_bot),
         CommandHandler(Handler.HELP.value, help_command),
         CommandHandler(Handler.STOP.value, stop_bot),
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_file),
         MessageHandler(filters.Document.ALL, handle_file),
         CallbackQueryHandler(handle_callback),
         MessageHandler(filters.COMMAND, unknown)
@@ -37,7 +38,7 @@ async def main():
         telegram_app.add_handler(handler)
 
     await telegram_app.bot.set_webhook(
-        url='https://7cd7-82-215-113-60.ngrok-free.app/webhook',  # Replace with actual ngrok url
+        url='https://eaf0-82-215-113-60.ngrok-free.app/webhook',  # Replace with actual ngrok url
         allowed_updates=Update.ALL_TYPES
     )
 

@@ -67,18 +67,3 @@ def chosen_template_markup(return_step: Optional[Callback] = None):
     if return_step:
         keyboard.extend(return_back(return_step, False))
     return InlineKeyboardMarkup(keyboard)
-
-
-def evaluate_cv_markup(return_step: Optional[Callback] = None):
-    keyboard = [
-        [InlineKeyboardButton(
-            Button.TEXT.value, callback_data=Callback.TEXT.value
-        )],
-        [InlineKeyboardButton(
-            Button.FILE.value,callback_data=Callback.FILE.value
-        )]
-    ]
-
-    if return_step:
-        keyboard.extend(return_back(return_step, False))
-    return InlineKeyboardMarkup(keyboard)

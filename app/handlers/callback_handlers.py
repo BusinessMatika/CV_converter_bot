@@ -3,13 +3,12 @@ from telegram.ext import ContextTypes
 
 from app.common.constants import ALLOWED_LANGUAGES
 from app.common.enums import Callback, CVTemplate, CVTranslation, Reply
-from app.config import DEBUG, logger
+from app.config import logger
 from app.handlers.command_handlers import start_bot, stop_bot
 from app.utils.bot_utils import (get_user_template_choice,
-                                 send_message_or_edit_text,
-                                 update_language_choice)
+                                 send_message_or_edit_text)
 from app.utils.keyboard import (chosen_CV_language, chosen_template_markup,
-                                evaluate_cv_markup, return_back)
+                                return_back)
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -19,10 +18,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(query.from_user.id)
 
     if data in ALLOWED_LANGUAGES:
-        if not DEBUG:
-            template_choice = get_user_template_choice(user_id)
-        else:
-            template_choice = context.user_data.get('cv_template')
+        template_choice = get_user_template_choice(user_id, context)
 
     command_handlers = {
         Callback.EDIT_CV.value: lambda update, context: send_message_or_edit_text(
@@ -32,7 +28,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ),
         Callback.CV_EVALUATION.value: lambda update, context: send_message_or_edit_text(
             update, context, Reply.CV_EVALUATION.value,
-            reply_markup=evaluate_cv_markup(Callback.RETURN_TO_START.value),
+            reply_markup=return_back(),
             parse_mode='HTML'
         )
     }
@@ -86,17 +82,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         **command_handlers,
         **template_handlers,
         **translation_handlers,
-        **system_handlers,
-        Callback.TEXT.value: lambda update, context: send_message_or_edit_text(
-            update, context, Reply.VACANCY_TEXT.value,
-            reply_markup=return_back(Callback.CV_EVALUATION.value),
-            parse_mode='HTML'
-        ),
-        Callback.FILE.value: lambda update, context: send_message_or_edit_text(
-            update, context, Reply.VACANCY_FILE.value,
-            reply_markup=return_back(Callback.CV_EVALUATION.value),
-            parse_mode='HTML'
-        )
+        **system_handlers
     }
 
     handler = handlers.get(query.data)

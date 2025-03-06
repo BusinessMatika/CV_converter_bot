@@ -42,4 +42,5 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # DB:
-DynamoDB = os.getenv('DynamoDB')
+EDIT_CV_DB = os.getenv('EDIT_CV_DB')
+EVALUATE_VAC_CV_DB = os.getenv('EVALUATE_VAC_CV_DB')

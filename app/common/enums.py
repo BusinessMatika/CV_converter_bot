@@ -1,13 +1,16 @@
 import json
 from enum import Enum
+from typing import Optional, Union
 
 from docx.shared import RGBColor
+
+from app.config import logger
 
 
 class Button(Enum):
     BACK = '⬅️ Назад'
     BUSINESSMARIKA = 'Businessmatika'
-    CV_EVALUATION = '2️⃣ Оценить CV для вакансии (НАХОДИТСЯ В РАЗРАБОТКЕ!)'
+    CV_EVALUATION = '2️⃣ Сравнить CV кандидата с вакансией'
     EDIT_CV = '1️⃣ Отредактировать CV'
     ENGLISH = 'Английский'
     FILE = 'Файл'
@@ -47,6 +50,7 @@ class Handler(Enum):
     HELP = 'help'
     START = 'start'
     STOP = 'stop'
+
 
 class Table(Enum):
     # Borders
@@ -106,6 +110,7 @@ class JSONData(Enum):
     ]
     TITLE = 'title'
 
+
 class Number(Enum):
     ZERO = 0
     ONE = 1
@@ -140,7 +145,14 @@ class Style(Enum):
 
 
 class OpenAI(Enum):
-    MODEL = 'gpt-3.5-turbo'
+    """Common configuration of OpenAI"""
+    MODEL_3_5_TURBO = 'gpt-3.5-turbo'
+    MODEL_4_TURBO = 'gpt-4-turbo'
+    MODEL_4 = 'gpt-4'
+
+
+class EditCV(Enum):
+    """Enums for Edit CV command"""
     JSON_RUS = {
         "header": {
             "full_name": "<Имя, фамилия, отчество>",
@@ -283,9 +295,9 @@ class OpenAI(Enum):
     def get_messages(user_content: str, json_str: str, prompt_choice: str) -> list[dict]:
         json_str = json.dumps(json_str, ensure_ascii=False, indent=4)
         if prompt_choice == 'russian':
-            prompt = OpenAI.PROMPT_RUS.value
+            prompt = EditCV.PROMPT_RUS.value
         elif prompt_choice == 'english':
-            prompt = OpenAI.PROMPT_ENG.value
+            prompt = EditCV.PROMPT_ENG.value
         else:
             raise ValueError(f"Invalid prompt choice: {prompt_choice}")
         return [
@@ -303,6 +315,130 @@ class OpenAI(Enum):
         ]
 
 
+class EvaluateVacancyCV(Enum):
+    eval_vac_prompt = (
+        "You are an expert HR professional specializing in job vacancy analysis."
+        "Your role is to extract and summarize the most important requirements and details from a single job description per request,"
+        "ensuring it can be easily compared with a candidate’s CV later. Your analysis should focus only on major details to streamline the comparison process. \n\n"
+
+        "When analyzing a vacancy, you should extract and return the following information in JSON format:\n"
+
+        '- "Job Title"\n'
+        '- "Location"\n'
+        '- "Experience Level" (Entry, Mid, Senior, etc.)\n'
+        '- "Responsibilities" (as an array)\n'
+        '- "Requirements" (as an array)\n'
+        '- "Preferred Qualifications" (as an array, if mentioned)\n'
+        # '- "Salary Range" (if provided)\n'
+        # '- "Benefits" (as an array, if mentioned)\n'
+        # '- "Other Important Notes" (e.g., remote work availability, travel requirements, etc.)\n'
+
+        "Your response must always be in valid JSON format to ensure easy analysis."
+        'If any critical details are missing from the vacancy description, return an empty string ("") or an empty array ("[]") instead of assuming values. \n'
+
+        "Always maintain a professional and neutral tone."
+
+        "Vacancy:\n\n{vacancy_data}"
+    )
+
+    eval_vac_cv_prompt = (
+        """
+        You are a professional HR recruiter responsible for evaluating candidates based on job vacancies provided by clients. The client will send a JSON file containing job details with fixed keys, but varying values. Alongside the vacancy details, a candidate's CV will also be provided.
+
+        Your task is to assess each candidate against the given vacancy. For vacancies with list-type data (such as responsibilities and requirements), each individual element should be evaluated separately. Each criterion should be highlighted for readability.
+
+        Evaluation criteria:
+        - Assign a score from 0 to 5 for each point in the job description:
+        - 0: ❌ (Not match at all)
+        - 1-5: ⭐ (Stars based on relevance, e.g., ⭐⭐⭐⭐ for a 4/5 match)
+        - Provide a brief explanation for each score.
+
+        Additional considerations when analyzing work experience:
+        1) Identify long gaps in work experience and highlight any recent periods of unemployment.
+        2) Evaluate job stability: frequent job changes are a red flag and should be noted.
+        3) Assess only relevant work experience. If a candidate has 20 years of total experience but only 2 years in the required role, count only those 2 years.
+        4) Examine work experience and tasks performed.  If tasks and achievements are repeated multiple times across the CV without added value, highlight this as a potential issue.
+        5) Prioritize experience in well-known, reputable companies over unknown or small organizations.
+        6) Verify hard skills. Ensure that skills listed in the CV are also reflected in the candidate’s work experience. If a skill is mentioned but not supported by work history, highlight it as unproven.
+
+        At the end of the evaluation:
+        - Calculate the candidate's overall compatibility percentage (0-100%) and explain your decision.
+        - Summarize the strengths and weaknesses of the candidate based on the assessment.
+        - Evaluate experience level.
+        - Highlight the best characteristics of the candidate.
+        - Highlight the weakest aspects that do not align with the vacancy.
+        - Provide recommendations for improving the candidate's CV to better match the job requirements.
+        - Explicitly highlight any red flags in the response (e.g., job gaps, frequent changes, lack of proven hard skills, excessive repetition of tasks, etc.), ensuring that the recruiter is alerted to these issues for manual review or candidate follow-up.
+        - Include a final <b>concise recommendation</b> on whether this candidate should be sent to the client or not.
+
+        The final result should be highlighted using only the following tags: <b>bold</b>, <i>italic</i>, <u>underline</u> for readability. Avoid Markdown formatting and any other HTML tags.
+
+        All results should be provided in Russian.
+        Vacancy_data:\n
+        {vacancy_data}\n\n
+
+        CV data:\n
+        {cv_data}
+        """
+    )
+
+    @staticmethod
+    def get_messages(prompt_choice: str, vacancy_data: str, cv_data: Optional[str] = None) -> list[dict]:
+        cv_data = f'📌 <b>Резюме кандидата:(для анализа)</b>\n{cv_data}\n\n' if cv_data else ''
+
+        return [
+            {
+                'role': 'system',
+                'content': 'You are an HR expert in job vacancy description analysis and CV compatibility to this vacancy. '
+            },
+            {
+                'role': 'user',
+                'content': prompt_choice.format(
+                    vacancy_data=vacancy_data,
+                    cv_data=cv_data,
+                )
+            }
+        ]
+
+    # @staticmethod
+    # def get_eval_vac_prompt_messages(vacancy_data: str) -> list[dict]:
+    #     """Формирует сообщения для промпта eval_vac_prompt (vacancy_data – строка)."""
+    #     return [
+    #         {
+    #             'role': 'system',
+    #             'content': 'You are an HR expert in job vacancy description analysis.'
+    #         },
+    #         {
+    #             'role': 'user',
+    #             'content': EvaluateVacancyCV.eval_vac_prompt.value.format(vacancy_data=vacancy_data)
+    #         }
+    #     ]
+
+    # @staticmethod
+    # def get_eval_vac_cv_prompt_messages(vacancy_data: dict, cv_data: str) -> list[dict]:
+    #     """Формирует сообщения для промпта eval_vac_cv_prompt (vacancy_data – словарь)."""
+    #     # Форматируем словарь вакансии в читаемый список требований
+    #     vacancy_str = "\n".join(
+    #         f"🔹 <b>{key.capitalize()}</b>: {', '.join(value) if isinstance(value, list) else value}"
+    #         for key, value in vacancy_data.items()
+    #     )
+    #     logger.info(f'ЧТО ХРАНИТСЯ В VACANCY_STR ВНУТРИ get_eval_vac_cv_prompt_messages: {vacancy_str}')
+
+    #     return [
+    #         {
+    #             'role': 'system',
+    #             'content': 'You are an HR expert in job vacancy description analysis and CV compatibility.'
+    #         },
+    #         {
+    #             'role': 'user',
+    #             'content': EvaluateVacancyCV.eval_vac_cv_prompt.value.format(
+    #                 vacancy_data=vacancy_data,
+    #                 cv_data=cv_data
+    #             )
+    #         }
+    #     ]
+
+
 class Reply(Enum):
     BAD_RESPONSE = (
         'Не получилось обработать файл.\n'
@@ -311,12 +447,17 @@ class Reply(Enum):
         'В случае очередной неудачи это означает, что на текущей итерации функционала бота '
         'обеспечить чтение и редактирование файла невозможно.\n\n'
     )
+    FILE_NOT_FOUND = (
+        'Вам требуется или выбрать команду, или отправить файл согласно инструкции.'
+    )
     COMPATIBLE = 'Ваш файл уже совместим с референсом.'
     CV_EVALUATION = (
         'Вы выбрали: <b>"Оценить CV для вакансии"</b>.\n\n'
-        'Выберите вариант отправки описания вакансии: '
-        'текстом или файлом в форматах .docx или .pdf'
+        'Отправьте описание вакансии одним из следующих споcобов:\n\n'
+        '- текстовым сообщением в чат;\n'
+        '- файлом в формате .docx или .pdf'
     )
+
     EDIT_CV = (
         'Вы выбрали: <b>"Отредактировать CV"</b>.\n\n'
         'Теперь выберете необходимый шаблон для CV.'
@@ -324,6 +465,16 @@ class Reply(Enum):
     EDIT_CV_EXECUTION = (
         'Файл <b>"{file_name}"</b> успешно загружен и будет '
         'преобразован в шаблон <b>"{template_name}"</b> на <b>{language_name}</b> языке.\n\n'
+        'Дождитесь загрузки файла.'
+    )
+    VACANCY_EVAL_EXECUTION = (
+        'Файл с вакансией <b>"{file_name}"</b> успешно загружен и будет '
+        'проанализирован с целью дальнейшего сопоставления с CV.\n\n'
+        'Дождитесь загрузки файла.'
+    )
+    VACANCY_CV_EVAL_EXECUTION = (
+        'Файл с CV <b>"{file_name}"</b> успешно загружен и будет '
+        'проанализирован совместно с ранее загруженной вакансией с целью дальнейшего сопоставления и оценки.\n\n'
         'Дождитесь загрузки файла.'
     )
     NOT_EXIST = 'Опция <b>"{query}"</b> пока недоступна.'
@@ -339,12 +490,10 @@ class Reply(Enum):
         'Вы выбрали <b>"{language}"</b> язык.\n\n'
         'Загрузите CV в формате .docx или .pdf, чтобы отредактировать его.'
     )
-    VACANCY_FILE = (
-        'Вы выбрали <b>"Текст"</b>. '
-        'Отправьте в чат текст с описанием вакансии. '
+    EVALUATE_VACANCY = (
+        'EVALUATE_VACANCY'
     )
-    VACANCY_TEXT = (
-        'Вы выбрали <b>"Файл"</b>.\n\n'
-        'Загрузите описание вакансии в формате .docx или .pdf. '
+    EVALUATE_CV = (
+        'EVALUATE_CV'
     )
     WRONG_EXT = 'Вы отправили файл не с тем расширением. Прошу отправить .docx или .pdf'
