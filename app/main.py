@@ -2,22 +2,40 @@ import asyncio
 import json
 from typing import Any, Dict, Optional
 
-from telegram import Update
+from telegram import BotCommand, BotCommandScopeChat, Update
 from telegram.error import BadRequest
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
                           MessageHandler, filters)
 
 from app.common.constants import (ALLOWED_COMMANDS, ALLOWED_LANGUAGES,
-                                  ALLOWED_TEMPLATES)
+                                  ALLOWED_TEMPLATES, FOR_ADMIN)
 from app.common.enums import Handler, Number
-from app.config import TELEGRAM_TOKEN, logger
+from app.config import ADMIN_ID, TELEGRAM_TOKEN, logger
 from app.handlers.callback_handlers import handle_callback
-from app.handlers.command_handlers import (help_command, start_bot, stop_bot,
-                                           unknown)
+from app.handlers.command_handlers import (help_command, manage_users,
+                                           start_bot, stop_bot, unknown)
 from app.utils.bot_utils import (update_language_choice, update_state,
                                  update_template_choice)
 
 from .handlers.file_handlers import handle_file
+from .handlers.text_handlers import handle_text
+
+
+async def set_bot_commands(application):
+    """Настраивает команды для пользователей и администраторов."""
+    bot = application.bot
+    common_commands = [
+        BotCommand("start", "Запустить бота"),
+        BotCommand("help", "Показать справку"),
+        BotCommand("stop", "Остановить бота"),
+    ]
+    admin_commands = common_commands + [BotCommand("manage_users", "Управление пользователями")]
+
+    # Общий список команд
+    await bot.set_my_commands(common_commands)
+
+    # Для админов расширенный список
+    await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(ADMIN_ID))
 
 
 async def process_event(
@@ -36,22 +54,17 @@ async def process_event(
         CommandHandler(Handler.START.value, start_bot),
         CommandHandler(Handler.HELP.value, help_command),
         CommandHandler(Handler.STOP.value, stop_bot),
-        MessageHandler(
-            filters.TEXT & ~filters.COMMAND, lambda update,context: handle_file(
-                update, context, state=state
-            )
-        ),
-        MessageHandler(
-            filters.Document.ALL, lambda update, context: handle_file(
-                update, context, template, language, state
-            )
-        ),
+        CommandHandler(Handler.MANAGE_USERS.value, manage_users),
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text),
+        MessageHandler(filters.Document.ALL, handle_file),
         CallbackQueryHandler(handle_callback),
         MessageHandler(filters.COMMAND, unknown)
     ]
 
     for handler in handlers:
         application.add_handler(handler)
+
+    await set_bot_commands(application)
 
     try:
         update = Update.de_json(json.loads(event["body"]), application.bot)
@@ -87,6 +100,10 @@ def lambda_handler(event: dict[str, Any], context: Any) -> Dict[str, Any]:
                 update_state(user_id, state, context)
                 logger.info(f'State {state} updated for user {user_id}.')
             elif data in ALLOWED_COMMANDS[Number.ONE.value]:
+                state = data
+                update_state(user_id, state, context)
+                logger.info(f'State {state} updated for user {user_id}.')
+            elif data in FOR_ADMIN:
                 state = data
                 update_state(user_id, state, context)
                 logger.info(f'State {state} updated for user {user_id}.')

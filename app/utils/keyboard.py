@@ -22,7 +22,7 @@ def return_back(
     return return_button
 
 
-def main_menu_markup(return_step: Optional[Callback] = None):
+def main_menu_markup(return_step: Optional[str] = None):
     keyboard = [
         [InlineKeyboardButton(
             Button.EDIT_CV.value, callback_data=Callback.EDIT_CV.value
@@ -43,7 +43,7 @@ def main_menu_markup(return_step: Optional[Callback] = None):
     return InlineKeyboardMarkup(keyboard)
 
 
-def chosen_CV_language(return_step: Optional[Callback] = None):
+def chosen_CV_language(return_step: Optional[str] = None):
     keyboard = [
         [InlineKeyboardButton(
             Button.RUSSIAN.value, callback_data=Callback.RUSSIAN.value)],
@@ -55,7 +55,7 @@ def chosen_CV_language(return_step: Optional[Callback] = None):
     return InlineKeyboardMarkup(keyboard)
 
 
-def chosen_template_markup(return_step: Optional[Callback] = None):
+def chosen_template_markup(return_step: Optional[str] = None):
     keyboard = [
         [InlineKeyboardButton(
             Button.BUSINESSMARIKA.value, callback_data=Callback.BUSINESSMATIKA.value)],
@@ -66,4 +66,32 @@ def chosen_template_markup(return_step: Optional[Callback] = None):
     ]
     if return_step:
         keyboard.extend(return_back(return_step, False))
+    return InlineKeyboardMarkup(keyboard)
+
+
+def admin_markup():
+    keyboard = [
+        [InlineKeyboardButton('➕ Добавить пользователя', callback_data='add_user')],
+        [InlineKeyboardButton('➖ Удалить пользователя', callback_data='delete_user')],
+        [InlineKeyboardButton(Button.BACK.value, callback_data=Callback.RETURN_TO_START.value)]
+
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def confirmation_add_markup(return_step: str):
+    keyboard = [
+        [InlineKeyboardButton("✅ Да", callback_data="confirm_add_user")],
+        [InlineKeyboardButton("❌ Нет", callback_data="cancel_add_user")],
+        [InlineKeyboardButton(Button.BACK.value, callback_data=return_step)]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def confirmation_delete_markup(return_step: str):
+    keyboard = [
+        [InlineKeyboardButton("✅ Да", callback_data="confirm_delete_user")],
+        [InlineKeyboardButton("❌ Нет", callback_data="cancel_delete_user")],
+        [InlineKeyboardButton(Button.BACK.value, callback_data=return_step)]
+    ]
     return InlineKeyboardMarkup(keyboard)

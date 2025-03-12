@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 from docx.shared import RGBColor
 
@@ -50,6 +50,7 @@ class Handler(Enum):
     HELP = 'help'
     START = 'start'
     STOP = 'stop'
+    MANAGE_USERS = 'manage_users'
 
 
 class Table(Enum):
@@ -329,9 +330,6 @@ class EvaluateVacancyCV(Enum):
         '- "Responsibilities" (as an array)\n'
         '- "Requirements" (as an array)\n'
         '- "Preferred Qualifications" (as an array, if mentioned)\n'
-        # '- "Salary Range" (if provided)\n'
-        # '- "Benefits" (as an array, if mentioned)\n'
-        # '- "Other Important Notes" (e.g., remote work availability, travel requirements, etc.)\n'
 
         "Your response must always be in valid JSON format to ensure easy analysis."
         'If any critical details are missing from the vacancy description, return an empty string ("") or an empty array ("[]") instead of assuming values. \n'

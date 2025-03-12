@@ -44,3 +44,8 @@ logger.setLevel(logging.INFO)
 # DB:
 EDIT_CV_DB = os.getenv('EDIT_CV_DB')
 EVALUATE_VAC_CV_DB = os.getenv('EVALUATE_VAC_CV_DB')
+TELEGRAM_USERS_DB = os.getenv('TELEGRAM_USERS_DB')
+TELEGRAM_STATE_DB = os.getenv('TELEGRAM_STATE_DB')
+
+# Telegram
+ADMIN_ID = os.getenv('ADMIN_ID')

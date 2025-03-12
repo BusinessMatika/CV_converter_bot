@@ -1,18 +1,36 @@
 import uvicorn
 from fastapi import FastAPI, Request
-from telegram import Update
+from telegram import BotCommand, BotCommandScopeChat, Update
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
                           MessageHandler, filters)
 
 from app.common.enums import Handler
-from app.config import TELEGRAM_TOKEN, logger
+from app.config import ADMIN_ID, TELEGRAM_TOKEN, logger
 from app.handlers.callback_handlers import handle_callback
-from app.handlers.command_handlers import (help_command, start_bot, stop_bot,
-                                           unknown)
+from app.handlers.command_handlers import (help_command, manage_users,
+                                           start_bot, stop_bot, unknown)
 from app.handlers.file_handlers import handle_file
+from app.handlers.text_handlers import handle_text
 
 # Initialize the FastAPI app
 fastapi_app = FastAPI()
+
+
+async def set_bot_commands(application):
+    """Настраивает команды для пользователей и администраторов."""
+    bot = application.bot
+    common_commands = [
+        BotCommand("start", "Запустить бота"),
+        BotCommand("help", "Показать справку"),
+        BotCommand("stop", "Остановить бота"),
+    ]
+    admin_commands = common_commands + [BotCommand("manage_users", "Управление пользователями")]
+
+    # Общий список команд
+    await bot.set_my_commands(common_commands)
+
+    # Для админов расширенный список
+    await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(ADMIN_ID))
 
 
 async def main():
@@ -27,7 +45,8 @@ async def main():
         CommandHandler(Handler.START.value, start_bot),
         CommandHandler(Handler.HELP.value, help_command),
         CommandHandler(Handler.STOP.value, stop_bot),
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_file),
+        CommandHandler(Handler.MANAGE_USERS.value, manage_users),
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text),
         MessageHandler(filters.Document.ALL, handle_file),
         CallbackQueryHandler(handle_callback),
         MessageHandler(filters.COMMAND, unknown)
@@ -37,8 +56,10 @@ async def main():
     for handler in handlers:
         telegram_app.add_handler(handler)
 
+    await set_bot_commands(telegram_app)
+
     await telegram_app.bot.set_webhook(
-        url='https://eaf0-82-215-113-60.ngrok-free.app/webhook',  # Replace with actual ngrok url
+        url='https://2a0d-82-215-113-60.ngrok-free.app/webhook',  # Replace with actual ngrok url
         allowed_updates=Update.ALL_TYPES
     )
 

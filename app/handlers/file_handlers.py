@@ -9,6 +9,7 @@ from app.common.constants import (ALLOWED_LANGUAGES, DOCX_MIME_TYPE,
                                   PDF_MIME_TYPE)
 from app.common.enums import Reply
 from app.config import DEBUG, logger
+from app.permissions.permissions import require_permission
 from app.utils.bot_utils import (get_state, get_user_language_choice,
                                  get_user_template_choice, get_vacancy,
                                  send_long_message, send_message_or_edit_text,
@@ -19,6 +20,7 @@ from app.utils.openai_utils import (analyze_and_edit_cv, analyze_vacancy,
 from app.utils.pdf_utils import extract_text_from_pdf
 
 
+@require_permission
 async def handle_file(
         update: Update, context: ContextTypes.DEFAULT_TYPE,
         template: Optional[str] = None,
@@ -26,21 +28,21 @@ async def handle_file(
         state: Optional[str] = None
 ):
     user_id = str(update.message.from_user.id)
-    state = context.user_data.get(
-        'current_state') if DEBUG else get_state(user_id, context)
+    state = get_state(user_id, context)
 
     if not state:
         await update.message.reply_text(
             'Я вас не понимаю. Введите команду или используйте кнопки меню.')
         return
 
-    if not validate_input(state, update):
+    if not await validate_input(state, update):
         return
 
     if state == 'edit_cv':
         await validate_input(state, update)
         await handle_edit_cv(update, context, template, language)
     elif state == 'cv_evaluation':
+        await update.message.reply_text(f'Вы выбрали {state}, загрузив файл') #
         await handle_cv_evaluation(update, context)
     elif state == 'waiting_for_cv':
         await validate_input(state, update)
@@ -50,6 +52,7 @@ async def handle_file(
             'Неизвестная команда. Попробуйте снова.')
 
 
+@require_permission
 async def handle_cv_evaluation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f'User {update.message.from_user.full_name} chose command cv_evaluation')
     vacancy_data = await evaluate_vacancy(update, context)
@@ -63,6 +66,7 @@ async def handle_cv_evaluation(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text('Ошибка обработки вакансии, попробуйте снова.')
 
 
+@require_permission
 async def evaluate_vacancy(
         update: Update, context: ContextTypes.DEFAULT_TYPE
 ):
@@ -120,6 +124,7 @@ async def evaluate_vacancy(
     return evaluated_vacancy_stream
 
 
+@require_permission
 async def handle_waiting_for_cv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info(f'User {update.message.from_user.full_name} is uploading CV.')
     user_id = str(update.message.from_user.id)
@@ -131,6 +136,7 @@ async def handle_waiting_for_cv(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text("Ошибка! Вакансия не найдена. Начните заново с /cv_evaluation.")
 
 
+@require_permission
 async def evaluate_cv(
         update: Update, context: ContextTypes.DEFAULT_TYPE,
         vacancy_data
@@ -187,12 +193,14 @@ async def evaluate_cv(
         logger.info(f"Temporary file {cv_path} removed.")
 
 
+@require_permission
 async def handle_edit_cv(update: Update, context: ContextTypes.DEFAULT_TYPE,
                          template: Optional[str] = None, language: Optional[str] = None):
     logger.info(f'User {update.message.from_user.full_name} chose command edit_cv')
     await edit_cv(update, context, template, language)
 
 
+@require_permission
 async def edit_cv(
         update: Update, context: ContextTypes.DEFAULT_TYPE,
         template=None, language=None

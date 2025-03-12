@@ -27,7 +27,7 @@ HELP_MESSAGE = (
     "чтобы оценить его соответствие вакансии.\n\n"
     "<b><u>Другие опции:</u></b>\n\n"
     "Пока не реализовано.\n\n"
-    "<b><u>Команды:</u></b>\n\n"
+    "<b><u>Команды для пользователей:</u></b>\n\n"
     "/start - Запустить бота и выбрать действие.\n"
     "/help - Показать это меню помощи.\n"
     "/stop - Остановить бота.\n\n"
@@ -42,6 +42,7 @@ ALLOWED_LANGUAGES = {
 }
 ALLOWED_COMMANDS = ('edit_cv', 'cv_evaluation')
 ALLOWED_TEMPLATES = ('businessmatika', 'huntercore', 'telescope')
+FOR_ADMIN = ('add_user', 'delete_user', 'manage_users')
 
 # Docx:
 DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
