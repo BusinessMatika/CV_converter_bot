@@ -58,6 +58,17 @@ def get_user_data(user_id, field_name, context: CallbackContext, table):
     except Exception as e:
         logger.error(f"Error getting {field_name}: {str(e)}")
         return None
+    
+
+def delete_temporary_user_id(user_id: str):
+    """Удаляет temporary_user_id у пользователя в DynamoDB."""
+    response = table_telegram_users.update_item(
+        Key={'user_id': user_id},  # Предполагаем, что user_id - это Primary Key
+        UpdateExpression="REMOVE temporary_user_id",
+        ConditionExpression="attribute_exists(temporary_user_id)",  # Удаляем только если поле существует
+        ReturnValues="UPDATED_NEW"
+    )
+    return response
 
 
 def user_exists(user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:

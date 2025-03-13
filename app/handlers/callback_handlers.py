@@ -6,7 +6,7 @@ from app.common.enums import Callback, CVTemplate, CVTranslation, Reply
 from app.config import logger
 from app.handlers.command_handlers import manage_users, start_bot, stop_bot
 from app.permissions.permissions import require_permission
-from app.utils.bot_utils import (add_user_to_db, delete_user_from_db,
+from app.utils.bot_utils import (add_user_to_db, delete_temporary_user_id, delete_user_from_db,
                                  get_state, get_user_data,
                                  get_user_template_choice,
                                  send_message_or_edit_text,
@@ -132,6 +132,7 @@ async def confirm_add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     add_user_to_db(new_user_id, context)
+    delete_temporary_user_id(user_id)
     await send_message_or_edit_text(update, context, f"Пользователь {new_user_id} успешно добавлен.", reply_markup=return_back(state))
 
 
@@ -142,6 +143,7 @@ async def cancel_add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_message_or_edit_text(update, context, f"Отмена операции добавления. ID пользователя {new_user_id} не найден.", reply_markup=return_back(state))
         return
     state = get_state(user_id, context)
+    delete_temporary_user_id(user_id)
     await send_message_or_edit_text(update, context, f'Вы отменили операцию добавления пользователя {new_user_id}', reply_markup=return_back(state))
 
 
@@ -155,14 +157,16 @@ async def confirm_delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     delete_user_from_db(delete_user_id, context)
+    delete_temporary_user_id(user_id)
     await send_message_or_edit_text(update, context, f"Пользователь {delete_user_id} успешно удалён.", reply_markup=return_back(state))
 
 
 async def cancel_delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     delete_user_id = get_user_data(user_id, 'temporary_user_id', context, table_telegram_users)
-    state = get_state(user_id, context)
     if not delete_user_id:
         await send_message_or_edit_text(update, context, f"Отмена операции удаления. ID пользователя {delete_user_id} не найден.", reply_markup=return_back(state))
         return
+    state = get_state(user_id, context)
+    delete_temporary_user_id(user_id)
     await send_message_or_edit_text(update, context, f'Вы отменили операцию удаления пользователя {delete_user_id}', reply_markup=return_back(state))
