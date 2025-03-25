@@ -59,7 +59,7 @@ async def main():
     await set_bot_commands(telegram_app)
 
     await telegram_app.bot.set_webhook(
-        url='https://2a0d-82-215-113-60.ngrok-free.app/webhook',  # Replace with actual ngrok url
+        url='https://ace5-82-215-113-60.ngrok-free.app/webhook',  # Replace with actual ngrok url
         allowed_updates=Update.ALL_TYPES
     )
 
