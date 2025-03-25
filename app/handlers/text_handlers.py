@@ -1,7 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from app.config import logger
 from app.handlers.file_handlers import handle_cv_evaluation
 from app.permissions.permissions import is_admin, require_permission
 from app.utils.bot_utils import (get_state, table_telegram_users,

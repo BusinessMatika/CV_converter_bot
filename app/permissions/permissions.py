@@ -7,7 +7,7 @@ from app.utils.bot_utils import (get_user_data, send_message_or_edit_text,
                                  table_telegram_users)
 
 
-def is_allowed(user_id: int) -> bool:    
+def is_allowed(user_id: int) -> bool:
     return get_user_data(user_id, 'user_id', None, table_telegram_users)
 
 

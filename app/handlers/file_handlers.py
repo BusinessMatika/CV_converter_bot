@@ -264,13 +264,13 @@ async def edit_cv(
         return
 
     if edited_file_stream:
-        if isinstance(edited_file_stream, str):  # Если вернулся путь к файлу
+        if isinstance(edited_file_stream, str):
             logger.error(f"Ошибка при обработке файла: {edited_file_stream[:20]}")
             await update.message.reply_text(Reply.BAD_RESPONSE.value)
             os.remove(file_path)
             return
 
-        elif isinstance(edited_file_stream, io.BytesIO):  # Если уже BytesIO, проверяем, не пустой ли он
+        elif isinstance(edited_file_stream, io.BytesIO):
             if edited_file_stream.getbuffer().nbytes == 0:
                 logger.error("Ошибка: файл пуст.")
                 await update.message.reply_text(Reply.BAD_RESPONSE.value)

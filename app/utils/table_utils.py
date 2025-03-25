@@ -69,8 +69,8 @@ def create_experiences_table(document, experiences, template_choice, index):
         right_cell = row.cells[Number.ONE.value]
 
         # Set column width
-        left_cell.width = Inches(2.0)  # 1/3 of A4
-        right_cell.width = Inches(4.0)  # 2/3 of A4
+        left_cell.width = Inches(2.0)
+        right_cell.width = Inches(4.0)
 
         add_experience_left_cell(left_cell, experience)
         add_experience_right_cell(right_cell, experience, index)

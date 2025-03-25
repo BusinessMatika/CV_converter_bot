@@ -398,44 +398,6 @@ class EvaluateVacancyCV(Enum):
             }
         ]
 
-    # @staticmethod
-    # def get_eval_vac_prompt_messages(vacancy_data: str) -> list[dict]:
-    #     """Формирует сообщения для промпта eval_vac_prompt (vacancy_data – строка)."""
-    #     return [
-    #         {
-    #             'role': 'system',
-    #             'content': 'You are an HR expert in job vacancy description analysis.'
-    #         },
-    #         {
-    #             'role': 'user',
-    #             'content': EvaluateVacancyCV.eval_vac_prompt.value.format(vacancy_data=vacancy_data)
-    #         }
-    #     ]
-
-    # @staticmethod
-    # def get_eval_vac_cv_prompt_messages(vacancy_data: dict, cv_data: str) -> list[dict]:
-    #     """Формирует сообщения для промпта eval_vac_cv_prompt (vacancy_data – словарь)."""
-    #     # Форматируем словарь вакансии в читаемый список требований
-    #     vacancy_str = "\n".join(
-    #         f"🔹 <b>{key.capitalize()}</b>: {', '.join(value) if isinstance(value, list) else value}"
-    #         for key, value in vacancy_data.items()
-    #     )
-    #     logger.info(f'ЧТО ХРАНИТСЯ В VACANCY_STR ВНУТРИ get_eval_vac_cv_prompt_messages: {vacancy_str}')
-
-    #     return [
-    #         {
-    #             'role': 'system',
-    #             'content': 'You are an HR expert in job vacancy description analysis and CV compatibility.'
-    #         },
-    #         {
-    #             'role': 'user',
-    #             'content': EvaluateVacancyCV.eval_vac_cv_prompt.value.format(
-    #                 vacancy_data=vacancy_data,
-    #                 cv_data=cv_data
-    #             )
-    #         }
-    #     ]
-
 
 class Reply(Enum):
     BAD_RESPONSE = (

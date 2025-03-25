@@ -3,7 +3,7 @@ from telegram.ext import CallbackContext, ContextTypes
 
 from app.common.constants import (ALLOWED_COMMANDS, ALLOWED_LANGUAGES,
                                   ALLOWED_TEMPLATES, FOR_ADMIN, MAX_LENGTH)
-from app.config import (ADMIN_ID, DEBUG, EDIT_CV_DB, EVALUATE_VAC_CV_DB,
+from app.config import (DEBUG, EDIT_CV_DB, EVALUATE_VAC_CV_DB,
                         TELEGRAM_STATE_DB, TELEGRAM_USERS_DB, logger)
 
 if not DEBUG:
@@ -63,9 +63,9 @@ def get_user_data(user_id, field_name, context: CallbackContext, table):
 def delete_temporary_user_id(user_id: str):
     """Удаляет temporary_user_id у пользователя в DynamoDB."""
     response = table_telegram_users.update_item(
-        Key={'user_id': user_id},  # Предполагаем, что user_id - это Primary Key
+        Key={'user_id': user_id},
         UpdateExpression="REMOVE temporary_user_id",
-        ConditionExpression="attribute_exists(temporary_user_id)",  # Удаляем только если поле существует
+        ConditionExpression="attribute_exists(temporary_user_id)",
         ReturnValues="UPDATED_NEW"
     )
     return response
@@ -171,10 +171,9 @@ async def validate_input(state: str, update: Update) -> bool:
         if not update.message.document:
             await update.message.reply_text('Пожалуйста, загрузите файл в формате ".docx" или ".pdf".')
             return False
-    
+
     elif state == 'edit_cv':
         if not update.message.document and not update.callback_query:
             await update.message.reply_text('Пожалуйста, совершите одно из двух действий согласно инструкции: выберите команду на клавиатуре или загрузите файл.')
             return False
     return True
-

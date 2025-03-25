@@ -2,8 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from app.common.constants import HELP_MESSAGE, START_MESSAGE, STOP_MESSAGE
-from app.common.enums import Callback
-from app.config import ADMIN_ID, DEBUG, logger
+from app.config import logger
 from app.permissions.permissions import (is_admin, require_admin,
                                          require_permission)
 from app.utils.bot_utils import reset_state, send_message_or_edit_text
@@ -42,9 +41,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reset_state(user_id, context)
     help_text = HELP_MESSAGE
 
-    # Проверяем, является ли пользователь админом
     if is_admin(user_id, context):
-        # Разбиваем HELP_MESSAGE, убираем последнюю строку
         help_lines = help_text.strip().split("\n")
         last_line = help_lines.pop()
         help_lines.append("🔧 <b><u>Команды для админа:</u></b>\n")

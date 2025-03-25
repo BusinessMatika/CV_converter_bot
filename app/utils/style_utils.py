@@ -19,7 +19,6 @@ def add_images_to_header_footer(
     """
     section = document.sections[Number.ZERO.value]
 
-    # Add header
     header = section.header
     header_paragraph = (
         header.paragraphs[
@@ -34,7 +33,6 @@ def add_images_to_header_footer(
     )
     header_paragraph.add_run("\n")
 
-    # Add footer
     if footer_image_path:
         footer = section.footer
         footer_paragraph = (

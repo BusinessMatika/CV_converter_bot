@@ -1,7 +1,5 @@
 import io
 import json
-import os
-from typing import Optional
 
 import openai
 from docx import Document
@@ -27,7 +25,6 @@ async def analyze_and_edit_cv(
         logger.error("File is empty.")
         return "Error: No readable content found."
 
-    # JSON-template choose based on language choice
     if language_choice == 'russian':
         json_choice = EditCV.JSON_RUS.value
         prompt_choice = language_choice
@@ -38,7 +35,6 @@ async def analyze_and_edit_cv(
         logger.error("Ошибка: неверный выбор языка")
         return "Invalid language choice"
 
-    # Get response from OpenAI
     try:
         response = openai.chat.completions.create(
             model=OpenAI.MODEL_3_5_TURBO.value,
@@ -54,7 +50,6 @@ async def analyze_and_edit_cv(
         logger.error(f'Ошибка запроса к OpenAI: {e}')
         return 'OpenAI request failed'
 
-    # Parse JSON
     try:
         gpt_response_clean = gpt_response.strip()
         gpt_response_clean = gpt_response.replace("\n", "").replace("'", '"')
@@ -69,7 +64,6 @@ async def analyze_and_edit_cv(
         logger.error("Ошибка: JSON-ответ не содержит ключ 'sections'.")
         return "Error: Missing 'sections' in response."
 
-    # Create docx from JSON
     output_stream = io.BytesIO()
     generate_docx_from_json(gpt_json, output_stream, template_choice, language_choice)
     output_stream.seek(0)
@@ -97,7 +91,6 @@ async def analyze_vacancy(
         logger.error(f'Ошибка запроса к OpenAI: {e}')
         return 'OpenAI request failed'
 
-    # Parse JSON
     try:
         gpt_response_clean = gpt_response.strip().replace("\n", "").replace("'", '"')
         gpt_json = json.loads(gpt_response_clean)

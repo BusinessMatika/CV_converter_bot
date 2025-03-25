@@ -14,7 +14,6 @@ def set_font(run: Run, font_name: str, font_size: int) -> None:
     run.font.name = font_name
     run.font.size = Pt(font_size)
 
-    # Ensure the font is applied to both Western and East Asian characters
     r = run._element
     rPr = r.find(qn('w:rPr'))
     if rPr is None:
