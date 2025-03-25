@@ -1,5 +1,12 @@
-#### **Переменные окружения (.env):**
+#### **.env:**
 
-- DEBUG=True (для разработки) | False (для продакшена)
+- DEBUG=True (for develop) | False (for prod)
 - OPENAI_API_KEY='YOUR_OPENAI_API_KEY'
 - TELEGRAM_TOKEN='YOUR_TELEGRAM_TOKEN'
+- ADMIN_ID='YOUR_ADMIN_TELEGRAM_ID'
+
+# DynamoDB
+EDIT_CV_DB=
+EVALUATE_VAC_CV_DB=
+TELEGRAM_USERS_DB=
+TELEGRAM_STATE_DB=
